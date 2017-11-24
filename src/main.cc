@@ -14,6 +14,19 @@
 #include <debuggl.h>
 using namespace std;
 
+const char* vertex_shader =
+#include "shaders/default.vert"
+;
+
+const char* geometry_shader =
+#include "shaders/default.geom"
+;
+
+const char* fragment_shader =
+#include "shaders/default.frag"
+;
+
+
 int window_width = 800, window_height = 600;
 
 // VBO and VAO descriptors.
@@ -62,7 +75,6 @@ int main(int argc, char* argv[])
 {
     std::string window_title = "Menger";
     if (!glfwInit()) exit(EXIT_FAILURE);
-    g_menger = std::make_shared<Menger>();
     glfwSetErrorCallback(ErrorCallback);
 
     // Ask an OpenGL 3.3 core profile context 
@@ -193,7 +205,7 @@ int main(int argc, char* argv[])
         glm::mat4 projection_matrix =
             glm::perspective(glm::radians(45.0f), aspect, 0.0001f, 1000.0f);
         // Compute the view matrix
-        // glm::mat4 view_matrix = g_camera.get_view_matrix();
+        glm::mat4 view_matrix;// = g_camera.get_view_matrix();
 
         // Send vertices to the GPU.
         CHECK_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER,
