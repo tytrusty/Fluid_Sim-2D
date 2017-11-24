@@ -35,6 +35,66 @@ static void adjust_bounds(int type, float* p, int N)
 }
 
 /**
+ * Uses Gauss-Seidel relaxation to solve linear system of equation 
+ */
+static void gauss_seidel (int type, float* p, float* p_prev, float a, float c,
+        int N)
+{
+    for (int step = 0; step < 20; ++step) {
+        for (int i = 0; i <= N; ++i) {
+            for (int j = 0; j <= N; ++j) {
+                p[IX(i,j)] = (p_prev[IX(i,j)] + a 
+                        * (p[IX(i-1,j)] + p[IX(i+1,j)] 
+                        +  p[IX(i,j-1)] + p[IX(i,j+1)])) / c;
+            }
+        }
+    }
+    // Adjust the boundaries of the array after changing values
+    adjust_bounds(type, p, N);
+
+}
+/**
+ * Solving for diffusion AKA the change in concentration due to flow out of
+ * cell and flow from neighbors. Need a stable method, so solution is to
+ * use the initial value and find the value when diffused back in
+ * time yields our initial.
+ *
+ */
+static void diffuse (int type, float* p, float* p_prev, float rate,
+        float time_step, int N) 
+{
+    float a = time_step * rate * N * N;
+    gauss_seidel (type, p, p_prev, a, 1 + 4 * a, N);
+}
+
+/**
+ *
+ *
+ */
+static void project (float* x, float* y, float* p, float* div, int N) 
+{
+    for (int i = 1; i <= N; ++i) {
+        for (int j = 1; j <= N; ++j) {
+            div[IX(i,j)] = (x[IX(i+1,j)] - x[IX(i-1,j)]
+                          + y[IX(i, j+1)] - y[IX(i, j -1)]) * -0.5f / N;
+            p[IX(i,j)] = 0;
+        }
+    }
+    adjust_bounds(0, div, N);
+    adjust_bounds(0, p, N);
+    gauss_seidel (0, p, div, 1, 4, N);
+    
+    for (int i = 1; i <= N; ++i) {
+        for (int j = 1; j <= N; ++j) {
+            x[IX(i,j)] -=  0.5f * N * (p[IX(i+1,j)] - p[IX(i-1,j)]);
+            y[IX(i,j)] -=  0.5f * N * (p[IX(i,j+1)] - p[IX(i,j-1)]);
+        }
+    }
+    adjust_bounds(1, x, N);
+    adjust_bounds(2, y, N);
+}
+
+/**
  * Basic idea advect is to move the parameter through the static velocity
  * field
  */
