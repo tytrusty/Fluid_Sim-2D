@@ -46,21 +46,32 @@ ErrorCallback(int error, const char* description)
 
 int g_current_button;
 bool g_mouse_pressed;
-bool isPrevSet = false;
 double prev_x, prev_y;
+double current_x, current_y;
 
 void
 MousePosCallback(GLFWwindow* window, double mouse_x, double mouse_y)
 {
+    prev_x = current_x;
+    prev_y = current_y;
+    current_x = mouse_x;
+    current_y = mouse_y;
+    float delta_x = current_x - prev_x;
+    float delta_y = current_y - prev_y;
+    if (sqrt(delta_x * delta_x + delta_y * delta_y) < 1e-15)
+        return;
     if (!g_mouse_pressed)
         return;
+    bool add_velocity = g_mouse_pressed 
+        && g_current_button == GLFW_MOUSE_BUTTON_LEFT;
+    bool add_density = g_mouse_pressed 
+        && g_current_button == GLFW_MOUSE_BUTTON_RIGHT;
 
-    if (g_current_button == GLFW_MOUSE_BUTTON_LEFT) {
-    } else if (g_current_button == GLFW_MOUSE_BUTTON_RIGHT) {
-    } else if (g_current_button == GLFW_MOUSE_BUTTON_MIDDLE) {
+    if (add_velocity) {
+
+    } else if (add_density) {
+
     }
-    prev_x = mouse_x;
-    prev_y = mouse_y;
 }
 
 void
@@ -68,7 +79,6 @@ MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 {
     g_mouse_pressed = (action == GLFW_PRESS);
     g_current_button = button;
-    isPrevSet = false;
 }
 
 int main(int argc, char* argv[])
