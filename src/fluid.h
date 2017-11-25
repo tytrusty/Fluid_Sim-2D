@@ -23,7 +23,8 @@ enum Grid_Type
 {
 	Density,
 	X_Velocity,
-	Y_Velocity
+	Y_Velocity, 
+    None
 }; 
 
 template <typename T>
@@ -31,7 +32,8 @@ struct Fluid_Grid {
 	T* array_;
 	Grid_Type type_;
 	unsigned int N_;
-	Fluid_Grid(unsigned int N, Grid_Type type) : N_(N), type_(type) {
+
+	Fluid_Grid(unsigned int N, Grid_Type type = None) : N_(N), type_(type) {
 		array_ = new T[(N+2)*(N+2)];
 	} 
 	~Fluid_Grid() {
@@ -44,18 +46,36 @@ struct Fluid_Grid {
 	
 };
 struct Fluid_Sim {
-	int N;			 // simulation dimension
-	float viscosity; // velocity diffusion rate
-	float diffusion; // density diffusion rate
+	int N_;    	      // simulation dimension
+	float viscosity_; // velocity diffusion rate
+	float diffusion_; // density diffusion rate
+    float time_step_; // time between simulation steps
+    const int solver_steps = 20;
+    Fluid_Grid<float> x, x_old,
+                      y, y_old,
+                      density, density_old;
+    Fluid_Grid<unsigned int> pixels;
 
-	Fluid_Sim (int N, float viscosity, float diffusion);
-	void add_external_forces();
+	Fluid_Sim (int N, float viscosity, float diffusion, float time_step);
+
 	void simulation_step();
-	void adjust_bounds();
-	void gauss_seidel();
-	void diffuse();
-	void project();
-	void advect();
+
+	void add_external_forces(Fluid_Grid<float> target, 
+            Fluid_Grid<float> source);
+    
+	void adjust_bounds(Fluid_Grid<float> grid);
+
+	void gauss_seidel(Fluid_Grid<float> grid, Fluid_Grid<float> grid_prev,
+            float a, float c);
+
+	void diffuse(Fluid_Grid<float> grid, Fluid_Grid<float> grid_prev, 
+            float rate);
+
+	void project(Fluid_Grid<float> x, Fluid_Grid<float> y, Fluid_Grid<float> p,
+            Fluid_Grid<float> div);
+        
+	void advect(Fluid_Grid<float> grid, Fluid_Grid<float> grid_prev,
+        Fluid_Grid<float> x, Fluid_Grid<float> y);
 };
 
 static void adjust_bounds(int type, float* p, int N) 
