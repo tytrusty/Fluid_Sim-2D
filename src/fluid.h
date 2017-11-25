@@ -2,6 +2,9 @@
 #define FLUID_H
 
 #define IX(i,j) ((i) + (N+2) * (j))
+#define FOR_EVERY(N) for(int k=0; k < (N)*(N); ++k) {int i=k%(N); int j=k/(N);
+#define END_FOR }
+
 inline float lerp(float v0, float v1, float t) {
     return (1 - t)*v0 + t*v1;
 }
@@ -12,11 +15,47 @@ inline void swap(float* v0, float* v1) {
     v1 = tmp;
 }
 
+/**
+ * Difference grid types require different handling
+ * for boundary conditions
+ */
+enum Grid_Type
+{
+	Density,
+	X_Velocity,
+	Y_Velocity
+}; 
+
+template <typename T>
+struct Fluid_Grid {
+	T* array_;
+	Grid_Type type_;
+	unsigned int N_;
+	Fluid_Grid(unsigned int N, Grid_Type type) : N_(N), type_(type) {
+		array_ = new T[(N+2)*(N+2)];
+	} 
+	~Fluid_Grid() {
+		delete[] array_;
+	}
+
+	T& operator () (int i, int j) { 
+		return array_[i + (N_+2) * j]; 
+	}	
+	
+};
 struct Fluid_Sim {
 	int N;			 // simulation dimension
 	float viscosity; // velocity diffusion rate
 	float diffusion; // density diffusion rate
 
+	Fluid_Sim (int N, float viscosity, float diffusion);
+	void add_external_forces();
+	void simulation_step();
+	void adjust_bounds();
+	void gauss_seidel();
+	void diffuse();
+	void project();
+	void advect();
 };
 
 static void adjust_bounds(int type, float* p, int N) 
