@@ -40,8 +40,8 @@ void Fluid_Sim::simulation_step()
     advect(density, density_old, x, y);
 }
 
-void Fluid_Sim::add_external_forces(Fluid_Grid<float> target,
-        Fluid_Grid<float> source)
+void Fluid_Sim::add_external_forces(Fluid_Grid<float>& target,
+        Fluid_Grid<float>& source)
 {
     for (int i = 0; i < (N_+2)*(N_+2); ++i) {
         target.array_[i] += source.array_[i] * time_step_;  
@@ -49,7 +49,7 @@ void Fluid_Sim::add_external_forces(Fluid_Grid<float> target,
 }
  
  
-void Fluid_Sim::adjust_bounds(Fluid_Grid<float> grid)
+void Fluid_Sim::adjust_bounds(Fluid_Grid<float>& grid)
 {
     // Handling edges
     for (int i = 1; i <= N_; ++i) {
@@ -66,12 +66,12 @@ void Fluid_Sim::adjust_bounds(Fluid_Grid<float> grid)
     grid(N_+1, N_+1) = 0.5 * (grid(N_, N_+1) + grid(N_+1, N_));
 }
  
-void Fluid_Sim::gauss_seidel(Fluid_Grid<float> grid, 
-        Fluid_Grid<float> grid_prev, float a, float c)
+void Fluid_Sim::gauss_seidel(Fluid_Grid<float>& grid, 
+        Fluid_Grid<float>& grid_prev, float a, float c)
 {
     for (int step = 0; step < solver_steps; ++step) {
-        for (int i = 0; i <= N_; ++i) {
-            for (int j = 0; j <= N_; ++j) {
+        for (int i = 1; i <= N_; ++i) {
+            for (int j = 1; j <= N_; ++j) {
                 grid(i, j) = (grid_prev(i,j) + a * (grid(i-1,j) + grid(i+1,j) 
                         + grid(i,j-1) + grid(i,j+1))) / c;
             }
@@ -82,7 +82,7 @@ void Fluid_Sim::gauss_seidel(Fluid_Grid<float> grid,
 
 }
  
-void Fluid_Sim::diffuse(Fluid_Grid<float> grid, Fluid_Grid<float> grid_prev,
+void Fluid_Sim::diffuse(Fluid_Grid<float>& grid, Fluid_Grid<float>& grid_prev,
         float rate)
 {
     float a = time_step_ * rate * N_ * N_;
@@ -91,8 +91,8 @@ void Fluid_Sim::diffuse(Fluid_Grid<float> grid, Fluid_Grid<float> grid_prev,
 
 }
  
-void Fluid_Sim::project(Fluid_Grid<float> x, Fluid_Grid<float> y, 
-        Fluid_Grid<float> p, Fluid_Grid<float> div)
+void Fluid_Sim::project(Fluid_Grid<float>& x, Fluid_Grid<float>& y, 
+        Fluid_Grid<float>& p, Fluid_Grid<float>& div)
 {
     for (int i = 1; i <= N_; ++i) {
         for (int j = 1; j <= N_; ++j) {
@@ -114,8 +114,8 @@ void Fluid_Sim::project(Fluid_Grid<float> x, Fluid_Grid<float> y,
     adjust_bounds(y);
 }
  
-void Fluid_Sim::advect(Fluid_Grid<float> grid, Fluid_Grid<float> grid_prev,
-        Fluid_Grid<float> x_velocity, Fluid_Grid<float> y_velocity)
+void Fluid_Sim::advect(Fluid_Grid<float>& grid, Fluid_Grid<float>& grid_prev,
+        Fluid_Grid<float>& x_velocity, Fluid_Grid<float>& y_velocity)
 {
     int x_lo, x_hi, y_lo, y_hi;
     float x, y, x_w, y_w;
@@ -125,7 +125,7 @@ void Fluid_Sim::advect(Fluid_Grid<float> grid, Fluid_Grid<float> grid_prev,
 
     for (int i = 1; i <= N_; ++i) {
         for (int j = 1; j <= N_; ++j) {
-            // Backtrace i according to the velocity field's p value
+            // Backtrace i according to the velocity field's x value
             x = i - dt0 * x_velocity(i,j);
             if (x < 0.5)           x = 0.5;
             else if (x > N_ + 0.5) x = N_ + 0.5;

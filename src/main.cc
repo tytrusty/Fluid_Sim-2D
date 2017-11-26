@@ -8,6 +8,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/string_cast.hpp>
 
+#include "fluid.h"
+
 // OpenGL library includes
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -195,6 +197,21 @@ int main(int argc, char* argv[])
     CHECK_GL_ERROR(light_position_location =
             glGetUniformLocation(program_id, "light_position"));
     glm::vec4 light_position = glm::vec4(10.0f, 10.0f, 10.0f, 1.0f);
+
+
+    int N = 64;
+    float viscosity = 0.99999f;
+    float diffusion = 0.999f;
+    float time_step = 0.125f;
+    Fluid_Sim sim(N, viscosity, diffusion, time_step);
+	sim.simulation_step();
+
+
+
+
+
+
+
 
     float aspect = 0.0f;
     float theta = 0.0f;
