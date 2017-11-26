@@ -246,7 +246,7 @@ int main(int argc, char* argv[])
             printf("%.3f ", fluid_sim.density.array_[i]);
         }
         printf("\n");
-    	glTexImage2D(GL_TEXTURE_2D, 0, 0, 0, config::N, config::N, GL_RGBA,
+    	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, config::N, config::N, GL_RGBA,
 			GL_UNSIGNED_BYTE, fluid_sim.density.array_ );
     	glBindTexture(GL_TEXTURE_2D, texture);
 		glUniform1i(texture_id, 0);
