@@ -82,14 +82,14 @@ struct Fluid_Sim {
             printf("\n");
         }
         printf("\n");
-        printf("----- X_Velocity -----\n");
-        for (int i = 1; i <= N_; ++i) {
-            for (int j = 1; j <= N_; ++j) {
-                printf("%.3f ", x(i,j));
-            }
-            printf("\n");
-        }
-        printf("\n");
+        // printf("----- X_Velocity -----\n");
+        // for (int i = 1; i <= N_; ++i) {
+        //     for (int j = 1; j <= N_; ++j) {
+        //         printf("%.3f ", x(i,j));
+        //     }
+        //     printf("\n");
+        // }
+        // printf("\n");
     }
 
 	Fluid_Sim (int N, float viscosity, float diffusion, float time_step);

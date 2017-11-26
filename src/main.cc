@@ -95,8 +95,8 @@ MousePosCallback(GLFWwindow* window, double mouse_x, double mouse_y)
         && g_current_button == GLFW_MOUSE_BUTTON_RIGHT;
    
     // Converting screen coordinates to fluid grid coordinates
-    int i = (int) ((current_x / (double) window_width) * config::N + 1);
-    int j = (int) ((current_y / (double) window_height) * config::N + 1);
+    int j = (int) ((current_x / (double) window_width) * config::N + 1);
+    int i = (int) ((current_y / (double) window_height) * config::N + 1);
     i = glm::clamp(i, 1, config::N);
     j = glm::clamp(j, 1, config::N);
 
@@ -108,8 +108,8 @@ MousePosCallback(GLFWwindow* window, double mouse_x, double mouse_y)
     } else if (add_density) {
         fluid_sim.density_old(i, j) = 100.0f;
     }
-    //fluid_sim.simulation_step();
-    //fluid_sim.debug_print();
+    fluid_sim.simulation_step();
+    fluid_sim.debug_print();
 }
 
 void
@@ -218,12 +218,8 @@ int main(int argc, char* argv[])
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+    fluid_sim.simulation_step();
     glUseProgram(program_id);
-
-    // Get the uniform locations.
-    // GLint projection_matrix_location = 0;
-    //CHECK_GL_ERROR(projection_matrix_location =
-    //        glGetUniformLocation(program_id, "projection"));
 
     while (!glfwWindowShouldClose(window)) {
         // Setup some basic window stuff.
@@ -237,17 +233,17 @@ int main(int argc, char* argv[])
         glLoadIdentity();
         glOrtho(0.0f, window_width, window_height, 0.0f, 0.0f, 1.0f);
 
-        fluid_sim.simulation_step();
+        //fluid_sim.simulation_step();
+        //fluid_sim.debug_print();
         
         // Passing in texture
 		glActiveTexture(GL_TEXTURE0);
-        std::cout << "DATA: " << fluid_sim.density.array_ << std::endl;
-        for (int i = 0; i < (config::N) * (config::N) ; ++i) {
-            printf("%.3f ", fluid_sim.density.array_[i]);
-        }
-        printf("\n");
-    	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, config::N, config::N, GL_RGBA,
-			GL_UNSIGNED_BYTE, fluid_sim.density.array_ );
+        //for (int i = 0; i < (config::N) * (config::N) ; ++i) {
+        //    printf("%.3f ", fluid_sim.density.array_[i]);
+        //}
+        // printf("\n");
+    	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, config::N , config::N , GL_RGBA,
+			GL_INT, fluid_sim.density.array_ );
     	glBindTexture(GL_TEXTURE_2D, texture);
 		glUniform1i(texture_id, 0);
        

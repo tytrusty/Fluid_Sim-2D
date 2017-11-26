@@ -13,31 +13,33 @@ void Fluid_Sim::simulation_step()
 {
     // --------- Velocity Solver --------- //
     // Assuming external forces currently stored in x_old and y_old
-    add_external_forces(x, x_old);
-    add_external_forces(y, y_old);
-    swap(x, x_old); swap(y, y_old);
-
-    // Viscous diffusion
-    diffuse(x, x_old, viscosity_);
-    diffuse(y, y_old, viscosity_);
-
-    // Enforce incompressibility
-    project(x, y, x_old, y_old);
-    swap(x, x_old); swap(y, y_old);
-   
-    // Self-Advection -- aka move velocity field along the velocity field
-    advect(x, x_old, x_old, y_old);
-    advect(y, y_old, x_old, y_old);
-
-    // Enforce incompressibility, again
-    project(x, y, x_old, y_old);
+//    add_external_forces(x, x_old);
+//    add_external_forces(y, y_old);
+//    swap(x, x_old); swap(y, y_old);
+//
+//    // Viscous diffusion
+//    diffuse(x, x_old, viscosity_);
+//    diffuse(y, y_old, viscosity_);
+//
+//    // Enforce incompressibility
+//    project(x, y, x_old, y_old);
+//    swap(x, x_old); swap(y, y_old);
+//   
+//    // Self-Advection -- aka move velocity field along the velocity field
+//    advect(x, x_old, x_old, y_old);
+//    advect(y, y_old, x_old, y_old);
+//
+//    // Enforce incompressibility, again
+//    project(x, y, x_old, y_old);
 
     // --------- Density Solver --------- //
     add_external_forces(density, density_old);
+    //printf("Adding external forces\n");
     swap(density, density_old);
     diffuse(density, density_old, diffusion_);
     swap(density, density_old);
     advect(density, density_old, x, y);
+    memset(density_old.array_, 0, (N_+2)*(N_+2)*sizeof(*density_old.array_));
 }
 
 void Fluid_Sim::add_external_forces(Fluid_Grid<float>& target,
