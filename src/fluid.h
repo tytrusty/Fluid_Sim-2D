@@ -45,6 +45,14 @@ struct Fluid_Grid {
 	}	
 	
 };
+
+
+inline void swap(Fluid_Grid<float> v0, Fluid_Grid<float> v1) {
+    float* tmp = v0.array_;
+    v0.array_ = v1.array_;
+    v1.array_ = tmp;
+}
+
 struct Fluid_Sim {
 	int N_;    	      // simulation dimension
 	float viscosity_; // velocity diffusion rate
@@ -75,7 +83,7 @@ struct Fluid_Sim {
             Fluid_Grid<float> div);
         
 	void advect(Fluid_Grid<float> grid, Fluid_Grid<float> grid_prev,
-        Fluid_Grid<float> x, Fluid_Grid<float> y);
+        Fluid_Grid<float> x_velocity, Fluid_Grid<float> y_velocity);
 };
 
 static void adjust_bounds(int type, float* p, int N) 
