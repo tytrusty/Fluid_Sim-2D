@@ -8,6 +8,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/string_cast.hpp>
 
+#include "config.h"
 #include "fluid.h"
 
 // OpenGL library includes
@@ -28,7 +29,6 @@ const char* fragment_shader =
 #include "shaders/default.frag"
 ;
 
-
 int window_width = 800, window_height = 600;
 
 // VBO and VAO descriptors.
@@ -39,6 +39,31 @@ enum { kGeometryVao, kFloorVao, kNumVaos };
 
 GLuint g_array_objects[kNumVaos];  // This will store the VAO descriptors.
 GLuint g_buffer_objects[kNumVaos][kNumVbos];  // These will store VBO descriptors.
+
+Fluid_Sim fluid_sim(config::N, config::viscosity, config::diffusion, 
+        config::time_step);
+
+float quad[] =
+{
+	-1.0f,  1.0f, 
+    -1.0f, -1.0f,
+	 1.0f,  1.0f,
+     1.0f, -1.0f
+};
+
+float tex_coords[] =
+{
+	0.0f, 1.0f, 
+    0.0f, 0.0f,
+	1.0f, 1.0f,
+    1.0f, 0.0f
+};
+
+float vertices[] = {
+     0.0f,  1.0f, // Vertex 1 (X, Y)
+     1.0f, -1.0f, // Vertex 2 (X, Y)
+    -1.0f, -1.0f  // Vertex 3 (X, Y)
+};
 
 void
 ErrorCallback(int error, const char* description)
@@ -68,12 +93,23 @@ MousePosCallback(GLFWwindow* window, double mouse_x, double mouse_y)
         && g_current_button == GLFW_MOUSE_BUTTON_LEFT;
     bool add_density = g_mouse_pressed 
         && g_current_button == GLFW_MOUSE_BUTTON_RIGHT;
+   
+    // Converting screen coordinates to fluid grid coordinates
+    int i = (int) ((current_x / (double) window_width) * config::N + 1);
+    int j = (int) ((current_y / (double) window_height) * config::N + 1);
+    i = glm::clamp(i, 1, config::N);
+    j = glm::clamp(j, 1, config::N);
 
+    // If dragging the mouse, influence the velocity field
+    // If clicking mouse add density AKA add dye
     if (add_velocity) {
-
+        fluid_sim.x_old(i, j) = (current_x - prev_x) * 10.0f;
+        fluid_sim.y_old(i, j) = (current_y - prev_y) * 10.0f;
     } else if (add_density) {
-
+        fluid_sim.density_old(i, j) = 100.0f;
     }
+    //fluid_sim.simulation_step();
+    //fluid_sim.debug_print();
 }
 
 void
@@ -85,7 +121,7 @@ MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 
 int main(int argc, char* argv[])
 {
-    std::string window_title = "Menger";
+    std::string window_title = "Fluid";
     if (!glfwInit()) exit(EXIT_FAILURE);
     glfwSetErrorCallback(ErrorCallback);
 
@@ -112,109 +148,83 @@ int main(int argc, char* argv[])
     std::cout << "Renderer: " << renderer << "\n";
     std::cout << "OpenGL version supported:" << version << "\n";
 
-    std::vector<glm::vec4> obj_vertices;
-    std::vector<glm::uvec3> obj_faces;
-    
-    glm::vec4 min_bounds = glm::vec4(std::numeric_limits<float>::max());
-    glm::vec4 max_bounds = glm::vec4(-std::numeric_limits<float>::max());
-   
-    for (uint32_t i = 0; i < obj_vertices.size(); ++i) {
-        min_bounds = glm::min(obj_vertices[i], min_bounds);
-        max_bounds = glm::max(obj_vertices[i], max_bounds);
-    }
-    std::cout << "min_bounds = " << glm::to_string(min_bounds) << "\n";
-    std::cout << "max_bounds = " << glm::to_string(max_bounds) << "\n";
+    // Setup VBO
+    GLuint vbo;
+    glGenBuffers(1, &vbo);              // generate 1 buffer (for quad)
+    glBindBuffer(GL_ARRAY_BUFFER, vbo); // switch to vbo 
+    CHECK_GL_ERROR(glBufferData(GL_ARRAY_BUFFER, sizeof(quad), quad, GL_STATIC_DRAW));
 
-    // Setup our VAO array.
-    CHECK_GL_ERROR(glGenVertexArrays(kNumVaos, &g_array_objects[0]));
+	// Setting up VBO for texture
+    GLuint uv_vbo;
+    glGenBuffers(1, &uv_vbo);              // generate buffer (for texture))
+    glBindBuffer(GL_ARRAY_BUFFER, uv_vbo); // switch to vbo 
+    CHECK_GL_ERROR(glBufferData(GL_ARRAY_BUFFER, sizeof(tex_coords), 
+		tex_coords, GL_STATIC_DRAW));
 
-    // Switch to the VAO for Geometry.
-    CHECK_GL_ERROR(glBindVertexArray(g_array_objects[kGeometryVao]));
-
-    // Generate buffer objects
-    CHECK_GL_ERROR(glGenBuffers(kNumVbos, &g_buffer_objects[kGeometryVao][0]));
-
-    // Setup vertex data in a VBO.
-    CHECK_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, g_buffer_objects[kGeometryVao][kVertexBuffer]));
-    // NOTE: We do not send anything right now, we just describe it to OpenGL.
-    CHECK_GL_ERROR(glBufferData(GL_ARRAY_BUFFER,
-                sizeof(float) * obj_vertices.size() * 4, nullptr,
-                GL_STATIC_DRAW));
-    CHECK_GL_ERROR(glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0));
-    CHECK_GL_ERROR(glEnableVertexAttribArray(0));
-
-    // Setup element array buffer.
-    CHECK_GL_ERROR(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, g_buffer_objects[kGeometryVao][kIndexBuffer]));
-    CHECK_GL_ERROR(glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-                sizeof(uint32_t) * obj_faces.size() * 3,
-                &obj_faces[0], GL_STATIC_DRAW));
-
-    // Setup vertex shader.
-    GLuint vertex_shader_id = 0;
+    // Setup vertex shader
     const char* vertex_source_pointer = vertex_shader;
-    CHECK_GL_ERROR(vertex_shader_id = glCreateShader(GL_VERTEX_SHADER));
-    CHECK_GL_ERROR(glShaderSource(vertex_shader_id, 1, &vertex_source_pointer, nullptr));
+    GLuint vertex_shader_id = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vertex_shader_id, 1, &vertex_source_pointer, nullptr);
     glCompileShader(vertex_shader_id);
     CHECK_GL_SHADER_ERROR(vertex_shader_id);
-
-    // Setup geometry shader.
-    GLuint geometry_shader_id = 0;
-    const char* geometry_source_pointer = geometry_shader;
-    CHECK_GL_ERROR(geometry_shader_id = glCreateShader(GL_GEOMETRY_SHADER));
-    CHECK_GL_ERROR(glShaderSource(geometry_shader_id, 1, &geometry_source_pointer, nullptr));
-    glCompileShader(geometry_shader_id);
-    CHECK_GL_SHADER_ERROR(geometry_shader_id);
-
+    
     // Setup fragment shader.
-    GLuint fragment_shader_id = 0;
     const char* fragment_source_pointer = fragment_shader;
-    CHECK_GL_ERROR(fragment_shader_id = glCreateShader(GL_FRAGMENT_SHADER));
-    CHECK_GL_ERROR(glShaderSource(fragment_shader_id, 1, &fragment_source_pointer, nullptr));
+    GLuint fragment_shader_id = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fragment_shader_id, 1, &fragment_source_pointer, nullptr);
     glCompileShader(fragment_shader_id);
     CHECK_GL_SHADER_ERROR(fragment_shader_id);
 
-    // Let's create our program.
-    GLuint program_id = 0;
-    CHECK_GL_ERROR(program_id = glCreateProgram());
-    CHECK_GL_ERROR(glAttachShader(program_id, vertex_shader_id));
-    CHECK_GL_ERROR(glAttachShader(program_id, fragment_shader_id));
-    CHECK_GL_ERROR(glAttachShader(program_id, geometry_shader_id));
-
-    // Bind attributes.
-    CHECK_GL_ERROR(glBindAttribLocation(program_id, 0, "vertex_position"));
-    CHECK_GL_ERROR(glBindFragDataLocation(program_id, 0, "fragment_color"));
+    // Create shader program.
+    GLuint program_id = glCreateProgram();
+    glAttachShader(program_id, vertex_shader_id);
+    glAttachShader(program_id, fragment_shader_id);
     glLinkProgram(program_id);
     CHECK_GL_PROGRAM_ERROR(program_id);
 
+	// Setup Vertex Array Object
+    GLuint vao;
+    CHECK_GL_ERROR(glGenVertexArrays(1, &vao));
+    CHECK_GL_ERROR(glBindVertexArray(vao));
+
+    // Bind attributes.
+    CHECK_GL_ERROR(glBindFragDataLocation(program_id, 0, "fragment_color"));
+
+    // GLint position_attr = 0;
+    // CHECK_GL_ERROR(position_attr = glGetAttribLocation(program_id, "vertex_position"));
+    // CHECK_GL_ERROR(glVertexAttribPointer(position_attr, 2, GL_FLOAT, GL_FALSE, 0, 0));
+    // CHECK_GL_ERROR(glEnableVertexAttribArray(position_attr));
+
+    // GLint uv_attr = 0;
+    // CHECK_GL_ERROR(uv_attr = glGetAttribLocation(program_id, "vertex_position"));
+    // //CHECK_GL_ERROR(uv_attr = glGetAttribLocation(program_id, "uv_coord"));
+	// std::cout << "UV_ATTR: " << uv_attr << std::endl;
+    // CHECK_GL_ERROR(glVertexAttribPointer(uv_attr, 2, GL_FLOAT, GL_FALSE, 0, 0));
+    // CHECK_GL_ERROR(glEnableVertexAttribArray(uv_attr));
+
+	GLuint texture_id = glGetUniformLocation(program_id, "textureSampler");
+	GLuint texture;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 
+		config::N, config::N, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+	glBindTexture(GL_TEXTURE_2D, 0);	
+
+	glEnable(GL_TEXTURE_2D);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    glUseProgram(program_id);
+
     // Get the uniform locations.
-    GLint projection_matrix_location = 0;
-    CHECK_GL_ERROR(projection_matrix_location =
-            glGetUniformLocation(program_id, "projection"));
-    GLint view_matrix_location = 0;
-    CHECK_GL_ERROR(view_matrix_location =
-            glGetUniformLocation(program_id, "view"));
-    GLint light_position_location = 0;
-    CHECK_GL_ERROR(light_position_location =
-            glGetUniformLocation(program_id, "light_position"));
-    glm::vec4 light_position = glm::vec4(10.0f, 10.0f, 10.0f, 1.0f);
+    // GLint projection_matrix_location = 0;
+    //CHECK_GL_ERROR(projection_matrix_location =
+    //        glGetUniformLocation(program_id, "projection"));
 
-
-    int N = 64;
-    float viscosity = 0.99999f;
-    float diffusion = 0.999f;
-    float time_step = 0.125f;
-    Fluid_Sim sim(N, viscosity, diffusion, time_step);
-	sim.simulation_step();
-
-
-
-
-
-
-
-
-    float aspect = 0.0f;
-    float theta = 0.0f;
     while (!glfwWindowShouldClose(window)) {
         // Setup some basic window stuff.
         glfwGetFramebufferSize(window, &window_width, &window_height);
@@ -223,42 +233,50 @@ int main(int argc, char* argv[])
         glEnable(GL_DEPTH_TEST);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glDepthFunc(GL_LESS);
+        glMatrixMode(GL_PROJECTION);
+        glLoadIdentity();
+        glOrtho(0.0f, window_width, window_height, 0.0f, 0.0f, 1.0f);
 
-        // Switch to the Geometry VAO.
-        CHECK_GL_ERROR(glBindVertexArray(g_array_objects[kGeometryVao]));
+        fluid_sim.simulation_step();
+        
+        // Passing in texture
+		glActiveTexture(GL_TEXTURE0);
+        std::cout << "DATA: " << fluid_sim.density.array_ << std::endl;
+        for (int i = 0; i < (config::N) * (config::N) ; ++i) {
+            printf("%.3f ", fluid_sim.density.array_[i]);
+        }
+        printf("\n");
+    	glTexImage2D(GL_TEXTURE_2D, 0, 0, 0, config::N, config::N, GL_RGBA,
+			GL_UNSIGNED_BYTE, fluid_sim.density.array_ );
+    	glBindTexture(GL_TEXTURE_2D, texture);
+		glUniform1i(texture_id, 0);
+       
+        // Passing in vertex values
+        glEnableVertexAttribArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        glVertexAttribPointer(
+                    0, 
+                    2,
+                    GL_FLOAT,
+                    GL_FALSE,
+                    0,
+                    (void*)0
+        );
 
-        // Compute the projection matrix.
-        aspect = static_cast<float>(window_width) / window_height;
-        glm::mat4 projection_matrix =
-            glm::perspective(glm::radians(45.0f), aspect, 0.0001f, 1000.0f);
-        // Compute the view matrix
-        glm::mat4 view_matrix;// = g_camera.get_view_matrix();
+        // Passing in per-vertex uv values
+        glEnableVertexAttribArray(1);
+        glBindBuffer(GL_ARRAY_BUFFER, uv_vbo);
+        glVertexAttribPointer(
+                    1, 
+                    2,
+                    GL_FLOAT,
+                    GL_FALSE,
+                    0,
+                    (void*)0
+        );
 
-        // Send vertices to the GPU.
-        CHECK_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER,
-                                    g_buffer_objects[kGeometryVao][kVertexBuffer]));
-        CHECK_GL_ERROR(glBufferData(GL_ARRAY_BUFFER,
-                                    sizeof(float) * obj_vertices.size() * 4,
-                                    &obj_vertices[0], GL_STATIC_DRAW));
-        // Setup element array buffer.
-        CHECK_GL_ERROR(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, g_buffer_objects[kGeometryVao][kIndexBuffer]));
-        CHECK_GL_ERROR(glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-                    sizeof(uint32_t) * obj_faces.size() * 3,
-                    &obj_faces[0], GL_STATIC_DRAW));
-
-        // Use our program.
-        CHECK_GL_ERROR(glUseProgram(program_id));
-
-        // Pass uniforms in.
-        CHECK_GL_ERROR(glUniformMatrix4fv(projection_matrix_location, 1, GL_FALSE,
-                    &projection_matrix[0][0]));
-        CHECK_GL_ERROR(glUniformMatrix4fv(view_matrix_location, 1, GL_FALSE,
-                    &view_matrix[0][0]));
-        CHECK_GL_ERROR(glUniform4fv(light_position_location, 1, &light_position[0]));
-
-        // Draw our triangles.
-        CHECK_GL_ERROR(glDrawElements(GL_TRIANGLES, obj_faces.size() * 3, GL_UNSIGNED_INT, 0));
-
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, 8);
+        
         // Poll and swap.
         glfwPollEvents();
         glfwSwapBuffers(window);

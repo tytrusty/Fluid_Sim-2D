@@ -4,7 +4,7 @@
 #include <iostream>
 #include <string.h>
 
-#define FOR_EVERY(N) for(int k=0; k < (N)*(N); ++k) {int i=k%(N); int j=k/(N);
+#define FOR_EVERY(N) for(int k=0; k < (N+2)*(N+2); ++k) {int i=k%(N); int j=k/(N);
 #define END_FOR }
 
 inline float lerp(float v0, float v1, float t) {
@@ -72,6 +72,25 @@ struct Fluid_Sim {
                       y, y_old,
                       density, density_old;
     Fluid_Grid<unsigned int> pixels;
+
+    void debug_print () {
+        printf("----- Density -----\n");
+        for (int i = 1; i <= N_; ++i) {
+            for (int j = 1; j <= N_; ++j) {
+                printf("%.3f ", density(i,j));
+            }
+            printf("\n");
+        }
+        printf("\n");
+        printf("----- X_Velocity -----\n");
+        for (int i = 1; i <= N_; ++i) {
+            for (int j = 1; j <= N_; ++j) {
+                printf("%.3f ", x(i,j));
+            }
+            printf("\n");
+        }
+        printf("\n");
+    }
 
 	Fluid_Sim (int N, float viscosity, float diffusion, float time_step);
 
