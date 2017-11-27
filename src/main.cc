@@ -29,7 +29,7 @@ const char* fragment_shader =
 #include "shaders/default.frag"
 ;
 
-int window_width = 800, window_height = 600;
+int window_width = 800, window_height = 800;
 
 // VBO and VAO descriptors.
 enum { kVertexBuffer, kIndexBuffer, kNumVbos };
@@ -108,8 +108,8 @@ MousePosCallback(GLFWwindow* window, double mouse_x, double mouse_y)
     } else if (add_density) {
         fluid_sim.density_old(i, j) = 100.0f;
     }
-    fluid_sim.simulation_step();
-    fluid_sim.debug_print();
+    //fluid_sim.simulation_step();
+    //fluid_sim.debug_print();
 }
 
 void
@@ -189,29 +189,31 @@ int main(int argc, char* argv[])
 
     // Bind attributes.
     CHECK_GL_ERROR(glBindFragDataLocation(program_id, 0, "fragment_color"));
-
-    // GLint position_attr = 0;
-    // CHECK_GL_ERROR(position_attr = glGetAttribLocation(program_id, "vertex_position"));
-    // CHECK_GL_ERROR(glVertexAttribPointer(position_attr, 2, GL_FLOAT, GL_FALSE, 0, 0));
-    // CHECK_GL_ERROR(glEnableVertexAttribArray(position_attr));
-
-    // GLint uv_attr = 0;
-    // CHECK_GL_ERROR(uv_attr = glGetAttribLocation(program_id, "vertex_position"));
-    // //CHECK_GL_ERROR(uv_attr = glGetAttribLocation(program_id, "uv_coord"));
-	// std::cout << "UV_ATTR: " << uv_attr << std::endl;
-    // CHECK_GL_ERROR(glVertexAttribPointer(uv_attr, 2, GL_FLOAT, GL_FALSE, 0, 0));
-    // CHECK_GL_ERROR(glEnableVertexAttribArray(uv_attr));
-
+	
+	//float blah[config::N][config::N];
+	//for (int i = 0; i < config::N; ++i) {	
+	//	for (int j = 0; j < config::N; ++j) {
+	//		blah[i][j] = 1.0f;
+	//	}
+	//}
+	int blah[100][100];
+	for (int i = 0; i < 100; ++i) {	
+		for (int j = 0; j < 100; ++j) {
+			blah[i][j] = i + j + i + j;
+		}
+	}
 	GLuint texture_id = glGetUniformLocation(program_id, "textureSampler");
 	GLuint texture;
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 
-		config::N, config::N, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+		100, 100, 0, GL_RGBA, GL_UNSIGNED_BYTE, blah);
+    //glTexImage2D(GL_TEXTURE_2D, 0, GL_R16F, 
+//			config::N, config::N, 0, GL_RED, GL_HALF_FLOAT, blah);
 	glBindTexture(GL_TEXTURE_2D, 0);	
 
 	glEnable(GL_TEXTURE_2D);
@@ -242,8 +244,9 @@ int main(int argc, char* argv[])
         //    printf("%.3f ", fluid_sim.density.array_[i]);
         //}
         // printf("\n");
-    	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, config::N , config::N , GL_RGBA,
-			GL_INT, fluid_sim.density.array_ );
+    //	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, config::N , config::N , GL_RGBA,
+	//		GL_UNSIGNED_BYTE, fluid_sim.density.array_ );
+    	// glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, config::N , config::N,  GL_RGBA, GL_UNSIGNED_BYTE, blah);
     	glBindTexture(GL_TEXTURE_2D, texture);
 		glUniform1i(texture_id, 0);
        
