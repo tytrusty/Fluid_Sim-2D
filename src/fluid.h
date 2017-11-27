@@ -47,6 +47,13 @@ struct Fluid_Grid {
         memset(array_, 0, (N_+2)*(N_+2)*sizeof(*array_));
     }
 
+    void resize(int N) {
+        N_ = N;
+        delete[] array_;
+        array_ = new T[(N+2)*(N+2)];
+        reset();
+    }
+
     Fluid_Grid(const Fluid_Grid&) = delete;
     Fluid_Grid& operator = (const Fluid_Grid&) = delete;
 
@@ -93,6 +100,7 @@ struct Fluid_Sim {
 
     void simulation_step();
     void reset();
+    void resize(int N);
 
     void add_external_forces(Fluid_Grid<float>& target, 
             Fluid_Grid<float>& source);

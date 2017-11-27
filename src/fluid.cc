@@ -52,6 +52,17 @@ void Fluid_Sim::reset()
     density_old.reset();
 }
 
+void Fluid_Sim::resize(int N) 
+{
+    N_ = N;
+    x.resize(N);
+    x_old.resize(N);
+    y.resize(N);
+    y_old.resize(N);
+    density.resize(N);
+    density_old.resize(N);
+}
+
 void Fluid_Sim::add_external_forces(Fluid_Grid<float>& target,
         Fluid_Grid<float>& source)
 {

@@ -97,15 +97,21 @@ KeyCallback(GLFWwindow* window,
         std::cout << "time_step increase: " << config::time_step << std::endl;
     } else if (key == GLFW_KEY_DOWN && action != GLFW_RELEASE) {
         config::decrease_resolution();
-        fluid_sim.N_ = config::N;
-        fluid_sim.reset();
+        fluid_sim.resize(config::N);
         std::cout << "resolution decrease: " << config::N << std::endl;
     } else if (key == GLFW_KEY_UP && action != GLFW_RELEASE) {
         config::increase_resolution();
-        fluid_sim.N_ = config::N;
-        fluid_sim.reset();
+        fluid_sim.resize(config::N);
         std::cout << "resolution increase: " << config::N << std::endl;
     } else if (key == GLFW_KEY_C && action != GLFW_RELEASE) {
+    } else if (key == GLFW_KEY_LEFT_BRACKET && action != GLFW_RELEASE) {
+        config::decrease_viscosity();
+        fluid_sim.viscosity_ = config::viscosity;
+        std::cout << "viscosity decrease: " << config::viscosity << std::endl;
+    } else if (key == GLFW_KEY_RIGHT_BRACKET && action != GLFW_RELEASE) {
+        config::increase_viscosity();
+        fluid_sim.viscosity_ = config::viscosity;
+        std::cout << "viscosity increase: " << config::viscosity << std::endl;
     }
 }
 
@@ -204,7 +210,6 @@ int main(int argc, char* argv[])
     glShaderSource(vertex_shader_id, 1, &vertex_source_pointer, nullptr);
     glCompileShader(vertex_shader_id);
     CHECK_GL_SHADER_ERROR(vertex_shader_id);
-    
     // Setup fragment shader.
     const char* fragment_source_pointer = fragment_shader;
     GLuint fragment_shader_id = glCreateShader(GL_FRAGMENT_SHADER);
@@ -273,7 +278,6 @@ int main(int argc, char* argv[])
     //        GL_UNSIGNED_BYTE, fluid_sim.density.array_ );
         // glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, config::N , config::N,  GL_RGBA, GL_UNSIGNED_BYTE, blah);
         int blah[config::N][config::N];
-
         for (int i = 1; i <= config::N; ++i) {
             for (int j = 1; j <= config::N; ++j) {
                 blah[i-1][j-1] = min((int)fluid_sim.density(i, j), 255); 
