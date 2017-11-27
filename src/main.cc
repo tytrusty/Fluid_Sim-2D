@@ -45,24 +45,18 @@ Fluid_Sim fluid_sim(config::N, config::viscosity, config::diffusion,
 
 float quad[] =
 {
-	-1.0f,  1.0f, 
+    -1.0f,  1.0f, 
     -1.0f, -1.0f,
-	 1.0f,  1.0f,
+     1.0f,  1.0f,
      1.0f, -1.0f
 };
 
 float tex_coords[] =
 {
-	0.0f, 1.0f, 
+    0.0f, 1.0f, 
     0.0f, 0.0f,
-	1.0f, 1.0f,
+    1.0f, 1.0f,
     1.0f, 0.0f
-};
-
-float vertices[] = {
-     0.0f,  1.0f, // Vertex 1 (X, Y)
-     1.0f, -1.0f, // Vertex 2 (X, Y)
-    -1.0f, -1.0f  // Vertex 3 (X, Y)
 };
 
 void
@@ -82,7 +76,7 @@ MousePosCallback(GLFWwindow* window, double mouse_x, double mouse_y)
     prev_x = current_x;
     prev_y = current_y;
     current_x = mouse_x;
-    current_y = mouse_y;
+    current_y = window_height - mouse_y;
     float delta_x = current_x - prev_x;
     float delta_y = current_y - prev_y;
     if (sqrt(delta_x * delta_x + delta_y * delta_y) < 1e-15)
@@ -154,12 +148,12 @@ int main(int argc, char* argv[])
     glBindBuffer(GL_ARRAY_BUFFER, vbo); // switch to vbo 
     CHECK_GL_ERROR(glBufferData(GL_ARRAY_BUFFER, sizeof(quad), quad, GL_STATIC_DRAW));
 
-	// Setting up VBO for texture
+    // Setting up VBO for texture
     GLuint uv_vbo;
     glGenBuffers(1, &uv_vbo);              // generate buffer (for texture))
     glBindBuffer(GL_ARRAY_BUFFER, uv_vbo); // switch to vbo 
     CHECK_GL_ERROR(glBufferData(GL_ARRAY_BUFFER, sizeof(tex_coords), 
-		tex_coords, GL_STATIC_DRAW));
+        tex_coords, GL_STATIC_DRAW));
 
     // Setup vertex shader
     const char* vertex_source_pointer = vertex_shader;
@@ -182,28 +176,16 @@ int main(int argc, char* argv[])
     glLinkProgram(program_id);
     CHECK_GL_PROGRAM_ERROR(program_id);
 
-	// Setup Vertex Array Object
+    // Setup Vertex Array Object
     GLuint vao;
     CHECK_GL_ERROR(glGenVertexArrays(1, &vao));
     CHECK_GL_ERROR(glBindVertexArray(vao));
 
     // Bind attributes.
     CHECK_GL_ERROR(glBindFragDataLocation(program_id, 0, "fragment_color"));
-	
-	//float blah[config::N][config::N];
-	//for (int i = 0; i < config::N; ++i) {	
-	//	for (int j = 0; j < config::N; ++j) {
-	//		blah[i][j] = 1.0f;
-	//	}
-	//}
-	int blah[100][100];
-	for (int i = 0; i < 100; ++i) {	
-		for (int j = 0; j < 100; ++j) {
-			blah[i][j] = i + j + i + j;
-		}
-	}
-	GLuint texture_id = glGetUniformLocation(program_id, "textureSampler");
-	GLuint texture;
+    
+    GLuint texture_id = glGetUniformLocation(program_id, "textureSampler");
+    GLuint texture;
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -211,14 +193,14 @@ int main(int argc, char* argv[])
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 
-		100, 100, 0, GL_RGBA, GL_UNSIGNED_BYTE, blah);
+        config::N, config::N, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
     //glTexImage2D(GL_TEXTURE_2D, 0, GL_R16F, 
-//			config::N, config::N, 0, GL_RED, GL_HALF_FLOAT, blah);
-	glBindTexture(GL_TEXTURE_2D, 0);	
+    //      config::N, config::N, 0, GL_RED, GL_HALF_FLOAT, blah);
+    glBindTexture(GL_TEXTURE_2D, 0);    
 
-	glEnable(GL_TEXTURE_2D);
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnable(GL_TEXTURE_2D);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     fluid_sim.simulation_step();
     glUseProgram(program_id);
@@ -235,20 +217,32 @@ int main(int argc, char* argv[])
         glLoadIdentity();
         glOrtho(0.0f, window_width, window_height, 0.0f, 0.0f, 1.0f);
 
-        //fluid_sim.simulation_step();
+        fluid_sim.simulation_step();
         //fluid_sim.debug_print();
         
         // Passing in texture
-		glActiveTexture(GL_TEXTURE0);
+        glActiveTexture(GL_TEXTURE0);
         //for (int i = 0; i < (config::N) * (config::N) ; ++i) {
         //    printf("%.3f ", fluid_sim.density.array_[i]);
         //}
         // printf("\n");
-    //	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, config::N , config::N , GL_RGBA,
-	//		GL_UNSIGNED_BYTE, fluid_sim.density.array_ );
-    	// glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, config::N , config::N,  GL_RGBA, GL_UNSIGNED_BYTE, blah);
-    	glBindTexture(GL_TEXTURE_2D, texture);
-		glUniform1i(texture_id, 0);
+    //    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, config::N , config::N , GL_RGBA,
+    //        GL_UNSIGNED_BYTE, fluid_sim.density.array_ );
+        // glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, config::N , config::N,  GL_RGBA, GL_UNSIGNED_BYTE, blah);
+        int blah[config::N][config::N];
+
+        for (int i = 1; i <= config::N; ++i) {
+            for (int j = 1; j <= config::N; ++j) {
+                blah[i-1][j-1] = min((int)fluid_sim.density(i, j), 255); 
+                // printf("%d ", blah[i-1][j-1]);
+            }
+            //printf("\n");
+        }
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, config::N , config::N,  GL_RGBA, GL_UNSIGNED_BYTE, blah);
+        //glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, config::N , config::N,  GL_RGBA, GL_UNSIGNED_BYTE, fluid_sim.density.get_grid());
+        //glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, config::N , config::N,  GL_RGBA, GL_UNSIGNED_BYTE, int_grid_);
+        glBindTexture(GL_TEXTURE_2D, texture);
+        glUniform1i(texture_id, 0);
        
         // Passing in vertex values
         glEnableVertexAttribArray(0);
