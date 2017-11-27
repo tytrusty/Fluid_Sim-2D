@@ -42,6 +42,16 @@ void Fluid_Sim::simulation_step()
     memset(density_old.array_, 0, (N_+2)*(N_+2)*sizeof(*density_old.array_));
 }
 
+void Fluid_Sim::reset() 
+{
+    x.reset();
+    x_old.reset();
+    y.reset();
+    y_old.reset();
+    density.reset();
+    density_old.reset();
+}
+
 void Fluid_Sim::add_external_forces(Fluid_Grid<float>& target,
         Fluid_Grid<float>& source)
 {

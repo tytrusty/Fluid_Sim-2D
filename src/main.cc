@@ -71,6 +71,45 @@ double prev_x, prev_y;
 double current_x, current_y;
 
 void
+KeyCallback(GLFWwindow* window,
+            int key,
+            int scancode,
+            int action,
+            int mods)
+{
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+        glfwSetWindowShouldClose(window, GL_TRUE);
+    else if (key == GLFW_KEY_S && mods == GLFW_MOD_CONTROL && action == GLFW_RELEASE) {
+    } else if (key == GLFW_KEY_W && action != GLFW_RELEASE) {
+    } else if (key == GLFW_KEY_S && action != GLFW_RELEASE) {
+    } else if (key == GLFW_KEY_A && action != GLFW_RELEASE) {
+    } else if (key == GLFW_KEY_D && action != GLFW_RELEASE) {
+    } else if (key == GLFW_KEY_R && action != GLFW_RELEASE) {
+        std::cout << "Resetting Simulation!" << std::endl;
+        fluid_sim.reset();
+    } else if (key == GLFW_KEY_LEFT && action != GLFW_RELEASE) {
+        config::decrement_time_step();
+        fluid_sim.time_step_ = config::time_step;
+        std::cout << "time_step decrease: " << config::time_step << std::endl;
+    } else if (key == GLFW_KEY_RIGHT && action != GLFW_RELEASE) {
+        config::increment_time_step();
+        fluid_sim.time_step_ = config::time_step;
+        std::cout << "time_step increase: " << config::time_step << std::endl;
+    } else if (key == GLFW_KEY_DOWN && action != GLFW_RELEASE) {
+        config::decrease_resolution();
+        fluid_sim.N_ = config::N;
+        fluid_sim.reset();
+        std::cout << "resolution decrease: " << config::N << std::endl;
+    } else if (key == GLFW_KEY_UP && action != GLFW_RELEASE) {
+        config::increase_resolution();
+        fluid_sim.N_ = config::N;
+        fluid_sim.reset();
+        std::cout << "resolution increase: " << config::N << std::endl;
+    } else if (key == GLFW_KEY_C && action != GLFW_RELEASE) {
+    }
+}
+
+void
 MousePosCallback(GLFWwindow* window, double mouse_x, double mouse_y)
 {
     prev_x = current_x;
@@ -138,6 +177,7 @@ int main(int argc, char* argv[])
     glGetError();  // clear GLEW's error for it
     glfwSetCursorPosCallback(window, MousePosCallback);
     glfwSetMouseButtonCallback(window, MouseButtonCallback);
+	glfwSetKeyCallback(window, KeyCallback);
     glfwSwapInterval(1);
 
     const GLubyte* renderer = glGetString(GL_RENDERER);  // get renderer string
