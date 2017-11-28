@@ -3,12 +3,14 @@
 
 Fluid_Sim::Fluid_Sim (int N, float viscosity, float diffusion, float time_step)
    : N_(N), viscosity_(viscosity), diffusion_(diffusion), time_step_(time_step),
-     gravity_(false),
+     enable_gravity_(false), enable_heat_(false),
      x(N, X_Velocity), x_old(N, X_Velocity), 
      y(N, Y_Velocity), y_old(N, Y_Velocity), 
      density(N, Density), density_old(N, Density),
-     pixels(N)
-{}
+     viscosity_grid(N)
+{
+    viscosity_grid.set_all(viscosity_);
+}
 
 void Fluid_Sim::simulation_step()
 {
@@ -17,7 +19,7 @@ void Fluid_Sim::simulation_step()
     add_external_forces(x, x_old);
     add_external_forces(y, y_old);
 
-    if (gravity_) {
+    if (enable_gravity_) {
         add_gravity(x);
     }
 

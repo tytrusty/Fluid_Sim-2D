@@ -85,7 +85,10 @@ KeyCallback(GLFWwindow* window,
     } else if (key == GLFW_KEY_D && action != GLFW_RELEASE) {
     } else if (key == GLFW_KEY_G && action != GLFW_RELEASE) {
         std::cout << "Flipping gravity" << std::endl;
-        fluid_sim.gravity_ = !fluid_sim.gravity_;
+        fluid_sim.enable_gravity_ = !fluid_sim.enable_gravity_;
+    } else if (key == GLFW_KEY_H && action != GLFW_RELEASE) {
+        std::cout << "Flipping heat diffusion" << std::endl;
+        fluid_sim.enable_heat_ = !fluid_sim.enable_heat_;
     } else if (key == GLFW_KEY_R && action != GLFW_RELEASE) {
         std::cout << "Resetting Simulation!" << std::endl;
         fluid_sim.reset();
@@ -136,8 +139,8 @@ MousePosCallback(GLFWwindow* window, double mouse_x, double mouse_y)
         && g_current_button == GLFW_MOUSE_BUTTON_RIGHT;
    
     // Converting screen coordinates to fluid grid coordinates
-    int j = (int) ((current_x / (double) window_width) * config::N + 1);
     int i = (int) ((current_y / (double) window_height) * config::N + 1);
+    int j = (int) ((current_x / (double) window_width) * config::N + 1);
     i = glm::clamp(i, 1, config::N);
     j = glm::clamp(j, 1, config::N);
 

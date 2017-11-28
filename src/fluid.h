@@ -39,19 +39,26 @@ struct Fluid_Grid {
         array_ = new T[(N+2)*(N+2)];
         
         // Zero out array 
-        memset(array_, 0, (N+2)*(N+2)*sizeof(*array_));
+        set_all(0);
     } 
 
+    /** Zero out the internal array */
     void reset() {
         // Zero out array 
-        memset(array_, 0, (N_+2)*(N_+2)*sizeof(*array_));
+        set_all(0);
     }
 
+    /** Resize the internal array, then zero out new array */
     void resize(int N) {
         N_ = N;
         delete[] array_;
         array_ = new T[(N+2)*(N+2)];
         reset();
+    }
+
+    /** Set all values of the array to some value, v */
+    void set_all(T v) {
+        memset(array_, v, (N_+2)*(N_+2)*sizeof(*array_));
     }
 
     Fluid_Grid(const Fluid_Grid&) = delete;
@@ -61,6 +68,7 @@ struct Fluid_Grid {
         delete[] array_;
     }
 
+    /** 2D access operator */
     T& operator () (int i, int j) { 
         return array_[i + (N_+2) * j]; 
     }    
@@ -75,30 +83,22 @@ inline void swap(Fluid_Grid<float>& v0, Fluid_Grid<float>& v1) {
 }
 
 struct Fluid_Sim {
-    int N_;              // simulation dimension
-    float viscosity_; // velocity diffusion rate
-    float diffusion_; // density diffusion rate
-    float time_step_; // time between simulation steps
-    bool gravity_;    // is gravity enabled
-    const int solver_steps = 20;
+    int N_;                 // simulation dimension
+    float viscosity_;       // velocity diffusion rate
+    float diffusion_;       // density diffusion rate
+    float time_step_;       // time between simulation steps
+    bool enable_gravity_;   // is gravity enabled
+    bool enable_heat_;      // is heat diffusion enabled
+    const int solver_steps = 20; // linear equation solver iterations
     Fluid_Grid<float> x, x_old,
                       y, y_old,
-                      density, density_old;
-    Fluid_Grid<unsigned int> pixels;
+                      density, density_old,
+                      viscosity_grid;
 
-    void debug_print () {
-        printf("----- Density -----\n");
-        for (int i = 1; i <= N_; ++i) {
-            for (int j = 1; j <= N_; ++j) {
-                printf("%.3f ", density(i,j));
-            }
-            printf("\n");
-        }
-        printf("\n");
-    }
-
+    /** Constructor */
     Fluid_Sim (int N, float viscosity, float diffusion, float time_step);
 
+    /** Run a single time step of the simulation */
     void simulation_step();
     void reset();
     void resize(int N);
@@ -121,7 +121,17 @@ struct Fluid_Sim {
         
     void advect(Fluid_Grid<float>& grid, Fluid_Grid<float>& grid_prev,
         Fluid_Grid<float>& x_velocity, Fluid_Grid<float>& y_velocity);
+
+    void debug_print () {
+        printf("----- Density -----\n");
+        for (int i = 1; i <= N_; ++i) {
+            for (int j = 1; j <= N_; ++j) {
+                printf("%.3f ", density(i,j));
+            }
+            printf("\n");
+        }
+        printf("\n");
+    }
+
 };
-
-
 #endif // FLUID_H 

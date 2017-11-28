@@ -10,18 +10,25 @@
 namespace heat
 {
     const int circle_vertices = 100;
-    static float radius = 0.01f;
     const float TWO_PI = M_PI * 2.0f;
-
+    static float radius = 0.01f;
+    static float x = 0.8;
+    static float y = 0.8;
     static clock_t begin = clock();
 
-    std::vector<glm::vec2> draw_boundary(float x = 0.8, float y = 0.8)
+    /**
+     * I'm not smart enough to do proper heat diffusion, so I just
+     * made a circle expand over time ... 
+     */
+    std::vector<glm::vec2> draw_boundary()
     {
+        // Get new radius
         clock_t end = clock();
         double elapsed = (double(end - begin) / CLOCKS_PER_SEC);
         begin = end;
         radius += (elapsed / config::time_step) * 0.005;
 
+        // Generate vertices to be used for a line loop
         std::vector<glm::vec2> boundary;
         for (int i = 0; i <= circle_vertices; ++i) {
             glm::vec2 vertex;
