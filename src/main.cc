@@ -7,38 +7,37 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/string_cast.hpp>
+#include <glm/gtx/io.hpp>
 
 #include "config.h"
 #include "fluid.h"
+#include "heat.h"
 
 // OpenGL library includes
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <debuggl.h>
+ 
 using namespace std;
 
 const char* vertex_shader =
 #include "shaders/default.vert"
 ;
 
-const char* geometry_shader =
-#include "shaders/default.geom"
-;
-
 const char* fragment_shader =
 #include "shaders/default.frag"
 ;
 
+const char* heat_vertex_shader =
+#include "shaders/heat.vert"
+;
+
+const char* heat_fragment_shader =
+#include "shaders/heat.frag"
+;
+
 int window_width = 800, window_height = 800;
 
-// VBO and VAO descriptors.
-enum { kVertexBuffer, kIndexBuffer, kNumVbos };
-
-// These are our VAOs.
-enum { kGeometryVao, kFloorVao, kNumVaos };
-
-GLuint g_array_objects[kNumVaos];  // This will store the VAO descriptors.
-GLuint g_buffer_objects[kNumVaos][kNumVbos];  // These will store VBO descriptors.
 
 Fluid_Sim fluid_sim(config::N, config::viscosity, config::diffusion, 
         config::time_step);
@@ -191,18 +190,28 @@ int main(int argc, char* argv[])
     std::cout << "Renderer: " << renderer << "\n";
     std::cout << "OpenGL version supported:" << version << "\n";
 
+    // Heat boundary 
+    std::vector<glm::vec2> boundary;
+
     // Setup VBO
     GLuint vbo;
     glGenBuffers(1, &vbo);              // generate 1 buffer (for quad)
     glBindBuffer(GL_ARRAY_BUFFER, vbo); // switch to vbo 
-    CHECK_GL_ERROR(glBufferData(GL_ARRAY_BUFFER, sizeof(quad), quad, GL_STATIC_DRAW));
+    glBufferData(GL_ARRAY_BUFFER, sizeof(quad), quad, GL_STATIC_DRAW);
 
     // Setting up VBO for texture
     GLuint uv_vbo;
     glGenBuffers(1, &uv_vbo);              // generate buffer (for texture))
     glBindBuffer(GL_ARRAY_BUFFER, uv_vbo); // switch to vbo 
-    CHECK_GL_ERROR(glBufferData(GL_ARRAY_BUFFER, sizeof(tex_coords), 
-        tex_coords, GL_STATIC_DRAW));
+    glBufferData(GL_ARRAY_BUFFER, sizeof(tex_coords),
+            tex_coords, GL_STATIC_DRAW);
+
+    // Setting up VBO for heat boundary
+    GLuint heat_vbo;
+    glGenBuffers(1, &heat_vbo);  // generate buffer (for heat boundary);
+    glBindBuffer(GL_ARRAY_BUFFER, heat_vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * boundary.size() * 2,
+            &boundary[0], GL_STATIC_DRAW);
 
     // Setup vertex shader
     const char* vertex_source_pointer = vertex_shader;
@@ -210,13 +219,30 @@ int main(int argc, char* argv[])
     glShaderSource(vertex_shader_id, 1, &vertex_source_pointer, nullptr);
     glCompileShader(vertex_shader_id);
     CHECK_GL_SHADER_ERROR(vertex_shader_id);
-    // Setup fragment shader.
+
+    // Setup fluid fragment shader.
     const char* fragment_source_pointer = fragment_shader;
     GLuint fragment_shader_id = glCreateShader(GL_FRAGMENT_SHADER);
     glShaderSource(fragment_shader_id, 1, &fragment_source_pointer, nullptr);
     glCompileShader(fragment_shader_id);
     CHECK_GL_SHADER_ERROR(fragment_shader_id);
 
+    // Setup heat vertex shader.
+    const char* heat_vertex_source_pointer = heat_vertex_shader;
+    GLuint heat_vertex_shader_id = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(heat_vertex_shader_id, 1, &heat_vertex_source_pointer, 
+            nullptr);
+    glCompileShader(heat_vertex_shader_id);
+    CHECK_GL_SHADER_ERROR(heat_vertex_shader_id);
+
+    // Setup heat fragment shader.
+    const char* heat_fragment_source_pointer = heat_fragment_shader;
+    GLuint heat_fragment_shader_id = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(heat_fragment_shader_id, 1, &heat_fragment_source_pointer, 
+            nullptr);
+    glCompileShader(heat_fragment_shader_id);
+    CHECK_GL_SHADER_ERROR(heat_fragment_shader_id);
+    
     // Create shader program.
     GLuint program_id = glCreateProgram();
     glAttachShader(program_id, vertex_shader_id);
@@ -224,14 +250,26 @@ int main(int argc, char* argv[])
     glLinkProgram(program_id);
     CHECK_GL_PROGRAM_ERROR(program_id);
 
+    GLuint heat_program_id = glCreateProgram();
+    glAttachShader(heat_program_id, heat_vertex_shader_id);
+    glAttachShader(heat_program_id, heat_fragment_shader_id);
+    glLinkProgram(heat_program_id);
+    CHECK_GL_PROGRAM_ERROR(heat_program_id);
+    
     // Setup Vertex Array Object
     GLuint vao;
     CHECK_GL_ERROR(glGenVertexArrays(1, &vao));
     CHECK_GL_ERROR(glBindVertexArray(vao));
 
-    // Bind attributes.
-    CHECK_GL_ERROR(glBindFragDataLocation(program_id, 0, "fragment_color"));
-    
+    GLuint heat_vao;
+    CHECK_GL_ERROR(glGenVertexArrays(1, &heat_vao));
+    CHECK_GL_ERROR(glBindVertexArray(heat_vao));
+
+    // Bind fragment attributes.
+    CHECK_GL_ERROR(glBindFragDataLocation(program_id, 0, "fragment_color")); 
+    CHECK_GL_ERROR(glBindFragDataLocation(heat_program_id, 0, "fragment_color")); 
+
+    // Send density texture data
     GLuint texture_id = glGetUniformLocation(program_id, "textureSampler");
     GLuint texture;
     glGenTextures(1, &texture);
@@ -242,16 +280,11 @@ int main(int argc, char* argv[])
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 
         config::N, config::N, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-    //glTexImage2D(GL_TEXTURE_2D, 0, GL_R16F, 
-    //      config::N, config::N, 0, GL_RED, GL_HALF_FLOAT, blah);
     glBindTexture(GL_TEXTURE_2D, 0);    
 
     glEnable(GL_TEXTURE_2D);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    fluid_sim.simulation_step();
-    glUseProgram(program_id);
 
     while (!glfwWindowShouldClose(window)) {
         // Setup some basic window stuff.
@@ -266,30 +299,26 @@ int main(int argc, char* argv[])
         glOrtho(0.0f, window_width, window_height, 0.0f, 0.0f, 1.0f);
 
         fluid_sim.simulation_step();
-        //fluid_sim.debug_print();
+        // fluid_sim.debug_print();
+
+        glUseProgram(program_id);
+
+
         
         // Passing in texture
         glActiveTexture(GL_TEXTURE0);
-        //for (int i = 0; i < (config::N) * (config::N) ; ++i) {
-        //    printf("%.3f ", fluid_sim.density.array_[i]);
-        //}
-        // printf("\n");
-    //    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, config::N , config::N , GL_RGBA,
-    //        GL_UNSIGNED_BYTE, fluid_sim.density.array_ );
-        // glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, config::N , config::N,  GL_RGBA, GL_UNSIGNED_BYTE, blah);
-        int blah[config::N][config::N];
+        int pixels[config::N][config::N];
         for (int i = 1; i <= config::N; ++i) {
             for (int j = 1; j <= config::N; ++j) {
-                blah[i-1][j-1] = min((int)fluid_sim.density(i, j), 255); 
-                // printf("%d ", blah[i-1][j-1]);
+                pixels[i-1][j-1] = min((int)fluid_sim.density(i, j), 255); 
             }
-            //printf("\n");
         }
-        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, config::N , config::N,  GL_RGBA, GL_UNSIGNED_BYTE, blah);
-        //glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, config::N , config::N,  GL_RGBA, GL_UNSIGNED_BYTE, fluid_sim.density.get_grid());
-        //glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, config::N , config::N,  GL_RGBA, GL_UNSIGNED_BYTE, int_grid_);
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, config::N, config::N, GL_RGBA,
+                GL_UNSIGNED_BYTE, pixels);
         glBindTexture(GL_TEXTURE_2D, texture);
         glUniform1i(texture_id, 0);
+        
+        glBindVertexArray(vao);
        
         // Passing in vertex values
         glEnableVertexAttribArray(0);
@@ -316,7 +345,29 @@ int main(int argc, char* argv[])
         );
 
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 8);
-        
+       
+        // RENDER HEAT BOUNDARY //
+        glUseProgram(heat_program_id);
+        glBindVertexArray(heat_vao);
+        boundary = heat::draw_boundary();
+        for (glm::vec2 i : boundary) {
+
+             std::cout << i << std::endl;
+        }
+        glEnableVertexAttribArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, heat_vbo);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(float) * boundary.size() * 2,
+                &boundary[0], GL_STATIC_DRAW);
+        glVertexAttribPointer(
+                    0, 
+                    2,
+                    GL_FLOAT,
+                    GL_FALSE,
+                    0,
+                    (void*)0
+        );
+        glDrawArrays(GL_TRIANGLE_FAN, 0, boundary.size() * 2);
+
         // Poll and swap.
         glfwPollEvents();
         glfwSwapBuffers(window);
