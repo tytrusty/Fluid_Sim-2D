@@ -79,6 +79,7 @@ struct Fluid_Sim {
     float viscosity_; // velocity diffusion rate
     float diffusion_; // density diffusion rate
     float time_step_; // time between simulation steps
+    bool gravity_;    // is gravity enabled
     const int solver_steps = 20;
     Fluid_Grid<float> x, x_old,
                       y, y_old,
@@ -104,6 +105,8 @@ struct Fluid_Sim {
 
     void add_external_forces(Fluid_Grid<float>& target, 
             Fluid_Grid<float>& source);
+    
+    void add_gravity(Fluid_Grid<float>& y); 
     
     void adjust_bounds(Fluid_Grid<float>& grid);
 

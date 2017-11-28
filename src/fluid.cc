@@ -1,8 +1,9 @@
-#include "fluid.h"
 #include <iostream>
+#include "fluid.h"
 
 Fluid_Sim::Fluid_Sim (int N, float viscosity, float diffusion, float time_step)
    : N_(N), viscosity_(viscosity), diffusion_(diffusion), time_step_(time_step),
+     gravity_(false),
      x(N, X_Velocity), x_old(N, X_Velocity), 
      y(N, Y_Velocity), y_old(N, Y_Velocity), 
      density(N, Density), density_old(N, Density),
@@ -15,6 +16,11 @@ void Fluid_Sim::simulation_step()
     // Assuming external forces currently stored in x_old and y_old
     add_external_forces(x, x_old);
     add_external_forces(y, y_old);
+
+    if (gravity_) {
+        add_gravity(x);
+    }
+
     swap(x, x_old); swap(y, y_old);
 
     // Viscous diffusion
@@ -71,7 +77,14 @@ void Fluid_Sim::add_external_forces(Fluid_Grid<float>& target,
     }   
 }
  
- 
+void Fluid_Sim::add_gravity(Fluid_Grid<float>& y) {
+    for (int i = 1; i <= N_; ++i) {
+        for (int j = 1; j <= N_; ++j) {
+            y(i, j) += -9.8f * time_step_;
+        }
+    }
+}
+
 void Fluid_Sim::adjust_bounds(Fluid_Grid<float>& grid)
 {
     // Handling edges
