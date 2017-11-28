@@ -1,7 +1,8 @@
 R"zzz(
 #version 330 core
+uniform vec4 color;
 out vec4 fragment_color;
 void main() {
-    fragment_color = vec4(0.8, 0.0, 0.0, 1.0);
+    fragment_color = color;
 }
 )zzz"

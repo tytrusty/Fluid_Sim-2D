@@ -72,7 +72,6 @@ struct Fluid_Grid {
     T& operator () (int i, int j) { 
         return array_[i + (N_+2) * j]; 
     }    
-    
 };
 
 
@@ -89,7 +88,7 @@ struct Fluid_Sim {
     float time_step_;       // time between simulation steps
     bool enable_gravity_;   // is gravity enabled
     bool enable_heat_;      // is heat diffusion enabled
-    const int solver_steps = 20; // linear equation solver iterations
+    const int solver_steps = 30; // linear equation solver iterations
     Fluid_Grid<float> x, x_old,
                       y, y_old,
                       density, density_old,
@@ -107,7 +106,8 @@ struct Fluid_Sim {
             Fluid_Grid<float>& source);
     
     void add_gravity(Fluid_Grid<float>& y); 
-    
+    void add_heat(Fluid_Grid<float>& viscosity); 
+
     void adjust_bounds(Fluid_Grid<float>& grid);
 
     void gauss_seidel(Fluid_Grid<float>& grid, Fluid_Grid<float>& grid_prev,
@@ -115,6 +115,12 @@ struct Fluid_Sim {
 
     void diffuse(Fluid_Grid<float>& grid, Fluid_Grid<float>& grid_prev, 
             float rate);
+
+    void gauss_seidel_viscosity(Fluid_Grid<float>& grid, Fluid_Grid<float>& grid_prev,
+            Fluid_Grid<float>& viscosity);
+
+    void diffuse_viscosity(Fluid_Grid<float>& grid, Fluid_Grid<float>& grid_prev, 
+            Fluid_Grid<float>& viscosity);
 
     void project(Fluid_Grid<float>& x, Fluid_Grid<float>& y, Fluid_Grid<float>& p,
             Fluid_Grid<float>& div);

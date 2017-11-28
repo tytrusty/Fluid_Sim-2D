@@ -58,6 +58,8 @@ float tex_coords[] =
     1.0f, 0.0f
 };
 
+GLfloat red[] = {1.0f, 0.0f, 0.0f, 1.0f };
+
 void
 ErrorCallback(int error, const char* description)
 {
@@ -261,19 +263,22 @@ int main(int argc, char* argv[])
     glAttachShader(heat_program_id, heat_fragment_shader_id);
     glLinkProgram(heat_program_id);
     CHECK_GL_PROGRAM_ERROR(heat_program_id);
-    
+
     // Setup Vertex Array Object
-    GLuint vao;
+    GLuint vao; // vao for dye
     CHECK_GL_ERROR(glGenVertexArrays(1, &vao));
     CHECK_GL_ERROR(glBindVertexArray(vao));
 
-    GLuint heat_vao;
+    GLuint heat_vao; // vao for heat boundary
     CHECK_GL_ERROR(glGenVertexArrays(1, &heat_vao));
     CHECK_GL_ERROR(glBindVertexArray(heat_vao));
 
     // Bind fragment attributes.
     CHECK_GL_ERROR(glBindFragDataLocation(program_id, 0, "fragment_color")); 
     CHECK_GL_ERROR(glBindFragDataLocation(heat_program_id, 0, "fragment_color")); 
+
+    // Setup color uniform
+    GLuint color_id = glGetUniformLocation(heat_program_id, "color");
 
     // Send density texture data
     GLuint texture_id = glGetUniformLocation(program_id, "textureSampler");
@@ -322,6 +327,8 @@ int main(int argc, char* argv[])
                     0,
                     (void*)0
         );
+
+        glUniform4fv(color_id, 1, red);
         glDrawArrays(GL_LINE_LOOP, 0, boundary.size());
         
         // RENDER FLUID //
@@ -338,6 +345,7 @@ int main(int argc, char* argv[])
                 pixels[i-1][j-1] = min((int)fluid_sim.density(i, j), 255); 
             }
         }
+
         glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, config::N, config::N, GL_RGBA,
                 GL_UNSIGNED_BYTE, pixels);
         glBindTexture(GL_TEXTURE_2D, texture);

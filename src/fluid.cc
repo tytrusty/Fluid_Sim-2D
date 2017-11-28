@@ -12,6 +12,7 @@ Fluid_Sim::Fluid_Sim (int N, float viscosity, float diffusion, float time_step)
     viscosity_grid.set_all(viscosity_);
 }
 
+    #include <ctime>
 void Fluid_Sim::simulation_step()
 {
     // --------- Velocity Solver --------- //
@@ -25,9 +26,16 @@ void Fluid_Sim::simulation_step()
 
     swap(x, x_old); swap(y, y_old);
 
-    // Viscous diffusion
-    diffuse(x, x_old, viscosity_);
-    diffuse(y, y_old, viscosity_);
+    // Viscous heat diffusion
+    if (enable_heat_) {
+        // If heat is enabled, we will have a non-uniform viscosity
+        add_heat(viscosity_grid);
+        diffuse_viscosity(x, x_old, viscosity_grid);
+        diffuse_viscosity(y, y_old, viscosity_grid);
+    } else {
+        diffuse(x, x_old, viscosity_);
+        diffuse(y, y_old, viscosity_);
+    }
 
     // Enforce incompressibility
     project(x, y, x_old, y_old);
@@ -47,6 +55,7 @@ void Fluid_Sim::simulation_step()
     diffuse(density, density_old, diffusion_);
     swap(density, density_old);
     advect(density, density_old, x, y);
+
     memset(density_old.array_, 0, (N_+2)*(N_+2)*sizeof(*density_old.array_));
 }
 
@@ -87,6 +96,14 @@ void Fluid_Sim::add_gravity(Fluid_Grid<float>& y) {
     }
 }
 
+void Fluid_Sim::add_heat(Fluid_Grid<float>& viscosity) 
+{
+    for (int i = 1; i <= N_; ++i) {
+        for (int j = 1; j <= N_; ++j) {
+            viscosity(i, j) += -9.8f * time_step_;
+        }
+    }
+}
 void Fluid_Sim::adjust_bounds(Fluid_Grid<float>& grid)
 {
     // Handling edges
@@ -117,16 +134,37 @@ void Fluid_Sim::gauss_seidel(Fluid_Grid<float>& grid,
     }
     // Adjust the boundaries of the array after changing values
     adjust_bounds(grid);
-
 }
  
+void Fluid_Sim::gauss_seidel_viscosity(Fluid_Grid<float>& grid, 
+        Fluid_Grid<float>& grid_prev, Fluid_Grid<float>& viscosity)
+{
+    for (int step = 0; step < solver_steps; ++step) {
+        for (int i = 1; i <= N_; ++i) {
+            for (int j = 1; j <= N_; ++j) {
+                float a = time_step_ * viscosity(i, j) * N_ * N_;
+                float c = 1 + 4 * a; 
+                grid(i, j) = (grid_prev(i,j) + a * (grid(i-1,j) + grid(i+1,j) 
+                        + grid(i,j-1) + grid(i,j+1))) / c;
+            }
+        }
+    }
+    // Adjust the boundaries of the array after changing values
+    adjust_bounds(grid);
+}
+
+void Fluid_Sim::diffuse_viscosity(Fluid_Grid<float>& grid, Fluid_Grid<float>& grid_prev,
+        Fluid_Grid<float>& viscosity)
+{
+    gauss_seidel_viscosity(grid, grid_prev, viscosity);
+}
+
 void Fluid_Sim::diffuse(Fluid_Grid<float>& grid, Fluid_Grid<float>& grid_prev,
         float rate)
 {
     float a = time_step_ * rate * N_ * N_;
     float c = 1 + 4*a;
     gauss_seidel (grid, grid_prev, a, c);
-
 }
  
 void Fluid_Sim::project(Fluid_Grid<float>& x, Fluid_Grid<float>& y, 

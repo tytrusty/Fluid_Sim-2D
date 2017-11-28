@@ -19,8 +19,9 @@ namespace heat
     /**
      * I'm not smart enough to do proper heat diffusion, so I just
      * made a circle expand over time ... 
+     * @param filled Indicates whether circle should be filled or not
      */
-    std::vector<glm::vec2> draw_boundary()
+    std::vector<glm::vec2> draw_boundary(bool filled = false)
     {
         // Get new radius
         clock_t end = clock();
