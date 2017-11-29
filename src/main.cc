@@ -262,6 +262,13 @@ int main(int argc, char* argv[])
     glBufferData(GL_ARRAY_BUFFER, sizeof(float) * boundary.size() * 2,
             &boundary[0], GL_STATIC_DRAW);
 
+    // Setting up VBO for heat boundary
+    GLuint vector_vbo;
+    glGenBuffers(1, &vector_vbo);  // generate buffer (for heat boundary);
+    glBindBuffer(GL_ARRAY_BUFFER, vector_vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * vector_field.size() * 2,
+            &vector_field[0], GL_STATIC_DRAW);
+
     // Setup vertex shader
     const char* vertex_source_pointer = vertex_shader;
     GLuint vertex_shader_id = glCreateShader(GL_VERTEX_SHADER);
@@ -292,7 +299,7 @@ int main(int argc, char* argv[])
     glCompileShader(heat_fragment_shader_id);
     CHECK_GL_SHADER_ERROR(heat_fragment_shader_id);
     
-    // Create shader program.
+    // Create shader programs
     GLuint program_id = glCreateProgram();
     glAttachShader(program_id, vertex_shader_id);
     glAttachShader(program_id, fragment_shader_id);
@@ -320,7 +327,7 @@ int main(int argc, char* argv[])
     CHECK_GL_ERROR(glGenVertexArrays(1, &heat_vao));
     CHECK_GL_ERROR(glBindVertexArray(heat_vao));
 
-    GLuint velocity_vao; // vao for heat boundary
+    GLuint velocity_vao; // vao for velocity vector field
     CHECK_GL_ERROR(glGenVertexArrays(1, &velocity_vao));
     CHECK_GL_ERROR(glBindVertexArray(velocity_vao));
 
@@ -364,7 +371,24 @@ int main(int argc, char* argv[])
         glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
 
-        generate_velocity_field();
+        // RENDER VECTOR FIELDS //
+        glUseProgram(velocity_program_id);
+        glBindVertexArray(velocity_vao);
+        vector_field = generate_velocity_field();
+        glEnableVertexAttribArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, vector_vbo);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(float) * vector_field.size() * 2,
+                &vector_field[0], GL_STATIC_DRAW);
+        glVertexAttribPointer(
+                    0, 
+                    2,
+                    GL_FLOAT,
+                    GL_FALSE,
+                    0,
+                    (void*)0
+        );
+        glUniform4fv(velocity_color_id, 1, red);
+        glDrawArrays(GL_LINES, 0, vector_field.size());
 
         // RENDER HEAT BOUNDARY //
         glUseProgram(heat_program_id);
@@ -382,7 +406,6 @@ int main(int argc, char* argv[])
                     0,
                     (void*)0
         );
-
         glUniform4fv(heat_color_id, 1, red);
         glDrawArrays(GL_LINE_LOOP, 0, boundary.size());
         
