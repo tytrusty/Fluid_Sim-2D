@@ -12,13 +12,27 @@ Fluid_Sim::Fluid_Sim (int N, float viscosity, float diffusion, float time_step)
     viscosity_grid.set_all(viscosity_);
 }
 
-    #include <ctime>
+#ifdef PROFILE
+	#include <ctime>
+#endif
 void Fluid_Sim::simulation_step()
 {
     // --------- Velocity Solver --------- //
     // Assuming external forces currently stored in x_old and y_old
+#ifdef PROFILE
+	std::clock_t start, end;
+	double duration;
+	start = std::clock();
+# endif
     add_external_forces(x, x_old);
     add_external_forces(y, y_old);
+	
+#ifdef PROFILE
+	end = std::clock();
+	duration = (end - start) / (double) CLOCKS_PER_SEC;
+	std::cout << "add_forces: " << duration << std::endl;
+	start = end;
+#endif
 
     if (enable_gravity_) {
         add_gravity(x);
@@ -37,20 +51,39 @@ void Fluid_Sim::simulation_step()
         diffuse(y, y_old, viscosity_);
     }
 
+#ifdef PROFILE
+	end = std::clock();
+	duration = (end - start) / (double) CLOCKS_PER_SEC;
+	std::cout << "diffuse/heat time: " << duration << std::endl;
+	start = end;
+#endif
+
     // Enforce incompressibility
     project(x, y, x_old, y_old);
     swap(x, x_old); swap(y, y_old);
+	
+#ifdef PROFILE
+	end = std::clock();
+	duration = (end - start) / (double) CLOCKS_PER_SEC;
+	std::cout << "project time 1: " << duration << std::endl;
+	start = end;
+#endif
    
     // Self-Advection -- aka move velocity field along the velocity field
     advect(x, x_old, x_old, y_old);
     advect(y, y_old, x_old, y_old);
 
+#ifdef PROFILE
+	end = std::clock();
+	duration = (end - start) / (double) CLOCKS_PER_SEC;
+	std::cout << "advection time: " << duration << std::endl;
+	start = end;
+#endif
     // Enforce incompressibility, again
     project(x, y, x_old, y_old);
 
     // --------- Density Solver --------- //
     add_external_forces(density, density_old);
-    //printf("Adding external forces\n");
     swap(density, density_old);
     diffuse(density, density_old, diffusion_);
     swap(density, density_old);
@@ -102,10 +135,11 @@ void Fluid_Sim::add_gravity(Fluid_Grid<float>& y) {
 
 void Fluid_Sim::add_heat(Fluid_Grid<float>& viscosity) 
 {
+	float amount = -9.8f * time_step_;
     _Pragma("omp parallel for")
     for (int i = 1; i <= N_; ++i) {
         for (int j = 1; j <= N_; ++j) {
-            viscosity(i, j) += -9.8f * time_step_;
+            viscosity(i, j) += amount;
         }
     }
 }

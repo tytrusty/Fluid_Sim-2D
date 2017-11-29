@@ -340,6 +340,7 @@ int main(int argc, char* argv[])
         // Passing in texture
         glActiveTexture(GL_TEXTURE0);
         int pixels[config::N][config::N];
+        _Pragma("omp parallel for")
         for (int i = 1; i <= config::N; ++i) {
             for (int j = 1; j <= config::N; ++j) {
                 pixels[i-1][j-1] = min((int)fluid_sim.density(i, j), 255); 
