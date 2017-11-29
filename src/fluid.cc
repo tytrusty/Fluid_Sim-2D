@@ -56,7 +56,9 @@ void Fluid_Sim::simulation_step()
     swap(density, density_old);
     advect(density, density_old, x, y);
 
-    memset(density_old.array_, 0, (N_+2)*(N_+2)*sizeof(*density_old.array_));
+    density_old.reset();
+    x_old.reset();
+    y_old.reset();
 }
 
 void Fluid_Sim::reset() 
@@ -83,12 +85,14 @@ void Fluid_Sim::resize(int N)
 void Fluid_Sim::add_external_forces(Fluid_Grid<float>& target,
         Fluid_Grid<float>& source)
 {
+    _Pragma("omp parallel for")
     for (int i = 0; i < (N_+2)*(N_+2); ++i) {
         target.array_[i] += source.array_[i] * time_step_;  
     }   
 }
  
 void Fluid_Sim::add_gravity(Fluid_Grid<float>& y) {
+    _Pragma("omp parallel for")
     for (int i = 1; i <= N_; ++i) {
         for (int j = 1; j <= N_; ++j) {
             y(i, j) += -9.8f * time_step_;
@@ -98,6 +102,7 @@ void Fluid_Sim::add_gravity(Fluid_Grid<float>& y) {
 
 void Fluid_Sim::add_heat(Fluid_Grid<float>& viscosity) 
 {
+    _Pragma("omp parallel for")
     for (int i = 1; i <= N_; ++i) {
         for (int j = 1; j <= N_; ++j) {
             viscosity(i, j) += -9.8f * time_step_;
@@ -124,6 +129,7 @@ void Fluid_Sim::adjust_bounds(Fluid_Grid<float>& grid)
 void Fluid_Sim::gauss_seidel(Fluid_Grid<float>& grid, 
         Fluid_Grid<float>& grid_prev, float a, float c)
 {
+    _Pragma("omp parallel for")
     for (int step = 0; step < solver_steps; ++step) {
         for (int i = 1; i <= N_; ++i) {
             for (int j = 1; j <= N_; ++j) {
@@ -139,6 +145,7 @@ void Fluid_Sim::gauss_seidel(Fluid_Grid<float>& grid,
 void Fluid_Sim::gauss_seidel_viscosity(Fluid_Grid<float>& grid, 
         Fluid_Grid<float>& grid_prev, Fluid_Grid<float>& viscosity)
 {
+    _Pragma("omp parallel for")
     for (int step = 0; step < solver_steps; ++step) {
         for (int i = 1; i <= N_; ++i) {
             for (int j = 1; j <= N_; ++j) {
@@ -170,6 +177,7 @@ void Fluid_Sim::diffuse(Fluid_Grid<float>& grid, Fluid_Grid<float>& grid_prev,
 void Fluid_Sim::project(Fluid_Grid<float>& x, Fluid_Grid<float>& y, 
         Fluid_Grid<float>& p, Fluid_Grid<float>& div)
 {
+    _Pragma("omp parallel for")
     for (int i = 1; i <= N_; ++i) {
         for (int j = 1; j <= N_; ++j) {
             div(i,j) = (x(i+1,j) - x(i-1,j) + y(i, j+1) - y(i, j -1)) * -0.5f / N_;
@@ -180,6 +188,7 @@ void Fluid_Sim::project(Fluid_Grid<float>& x, Fluid_Grid<float>& y,
     adjust_bounds(p);
     gauss_seidel (p, div, 1, 4);
     
+    _Pragma("omp parallel for")
     for (int i = 1; i <= N_; ++i) {
         for (int j = 1; j <= N_; ++j) {
             x(i,j) -=  0.5f * N_ * (p(i+1,j) - p(i-1,j));
@@ -224,6 +233,14 @@ void Fluid_Sim::advect(Fluid_Grid<float>& grid, Fluid_Grid<float>& grid_prev,
             x_w = x - x_lo; // x parametric weight
             y_w = y - y_lo; // y parametric weight
             
+            // if ( i == 1 && j == 50) {
+            //     std::cout << "x: " << x << std::endl;
+            //     std::cout << "x_lo : " << x_lo << std::endl; 
+            //     std::cout << "x_hi : " << x_hi << std::endl; 
+            //     std::cout << "y_lo : " << y_lo << std::endl;
+            //     std::cout << "y_hi : " << y_hi << std::endl;
+            // }
+
             // Bilinearly interpolating the new scalar value
             grid(i,j) = 
                 (1 - x_w) * lerp(grid_prev(x_lo, y_lo), grid_prev(x_lo, y_hi), y_w)

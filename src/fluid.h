@@ -88,7 +88,7 @@ struct Fluid_Sim {
     float time_step_;       // time between simulation steps
     bool enable_gravity_;   // is gravity enabled
     bool enable_heat_;      // is heat diffusion enabled
-    const int solver_steps = 30; // linear equation solver iterations
+    const int solver_steps = 40; // linear equation solver iterations
     Fluid_Grid<float> x, x_old,
                       y, y_old,
                       density, density_old,
