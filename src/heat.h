@@ -27,7 +27,7 @@ namespace heat
         clock_t end = clock();
         double elapsed = (double(end - begin) / CLOCKS_PER_SEC);
         begin = end;
-        radius += (elapsed / config::time_step) * 0.0005;
+        radius += 0.0005; //(elapsed / config::time_step) * 0.0005;
 
         // Generate vertices to be used for a line loop
         std::vector<glm::vec2> boundary;
@@ -38,6 +38,11 @@ namespace heat
             boundary.push_back(vertex);
         }
         return boundary;
+    }
+
+    void update_boundary() 
+    {
+        radius += 0.0005;
     }
 }
 

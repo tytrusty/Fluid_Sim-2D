@@ -125,24 +125,26 @@ void Fluid_Sim::add_external_forces(Fluid_Grid<float>& target,
 }
  
 void Fluid_Sim::add_gravity(Fluid_Grid<float>& y) {
+	float amount = -9.8f * time_step_;
     _Pragma("omp parallel for")
     for (int i = 1; i <= N_; ++i) {
         for (int j = 1; j <= N_; ++j) {
-            y(i, j) += -9.8f * time_step_;
+            y(i, j) += amount;
         }
     }
 }
 
 void Fluid_Sim::add_heat(Fluid_Grid<float>& viscosity) 
 {
-	float amount = -9.8f * time_step_;
-    _Pragma("omp parallel for")
+    //
     for (int i = 1; i <= N_; ++i) {
         for (int j = 1; j <= N_; ++j) {
-            viscosity(i, j) += amount;
+            y(i, j) += -9.8f * time_step_;
         }
     }
+
 }
+
 void Fluid_Sim::adjust_bounds(Fluid_Grid<float>& grid)
 {
     // Handling edges

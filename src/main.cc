@@ -62,6 +62,8 @@ GLfloat red[] = {1.0f, 0.0f, 0.0f, 1.0f };
 GLfloat field[] = {0.6f, 0.2f, 1.0f, 1.0f };
 
 bool show_velocity = false;
+bool show_heat     = false;
+
 std::vector<glm::vec2> generate_velocity_field()
 {
     std::vector<glm::vec2> vector_field;
@@ -125,6 +127,7 @@ KeyCallback(GLFWwindow* window,
     } else if (key == GLFW_KEY_H && action != GLFW_RELEASE) {
         std::cout << "Toggling heat diffusion" << std::endl;
         fluid_sim.enable_heat_ = !fluid_sim.enable_heat_;
+        show_heat = !show_heat;
     } else if (key == GLFW_KEY_R && action != GLFW_RELEASE) {
         std::cout << "Resetting Simulation!" << std::endl;
         fluid_sim.reset();
@@ -390,23 +393,28 @@ int main(int argc, char* argv[])
         }
 
         // RENDER HEAT BOUNDARY //
-        glUseProgram(heat_program_id);
-        glBindVertexArray(heat_vao);
-        boundary = heat::draw_boundary();
-        glEnableVertexAttribArray(0);
-        glBindBuffer(GL_ARRAY_BUFFER, heat_vbo);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(float) * boundary.size() * 2,
-                &boundary[0], GL_STATIC_DRAW);
-        glVertexAttribPointer(
-                    0, 
-                    2,
-                    GL_FLOAT,
-                    GL_FALSE,
-                    0,
-                    (void*)0
-        );
-        glUniform4fv(heat_color_id, 1, red);
-        glDrawArrays(GL_LINE_LOOP, 0, boundary.size());
+        if (show_heat) 
+        {
+            glUseProgram(heat_program_id);
+            glBindVertexArray(heat_vao);
+            boundary = heat::draw_boundary();
+            glEnableVertexAttribArray(0);
+            glBindBuffer(GL_ARRAY_BUFFER, heat_vbo);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(float) * boundary.size() * 2,
+                    &boundary[0], GL_STATIC_DRAW);
+            glVertexAttribPointer(
+                        0, 
+                        2,
+                        GL_FLOAT,
+                        GL_FALSE,
+                        0,
+                        (void*)0
+            );
+            glUniform4fv(heat_color_id, 1, red);
+            glDrawArrays(GL_LINE_LOOP, 0, boundary.size());
+        } else {
+            heat::update_boundary(); // still invisibly update boundary
+        }
         
         // RENDER FLUID //
         fluid_sim.simulation_step();
