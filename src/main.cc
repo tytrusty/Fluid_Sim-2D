@@ -84,6 +84,10 @@ std::vector<glm::vec2> generate_velocity_field()
             dy = 0 ? dy == 0 : dy / magnitude; // normalize
             glm::vec2 p1 = glm::vec2((j + dx * length) / (double)config::N,
                                      (i + dy * length) / (double)config::N);
+            p0[0] = p0[0] * 2 - 1;
+            p0[1] = p0[1] * 2 - 1;
+            p1[0] = p1[0] * 2 - 1;
+            p1[1] = p1[1] * 2 - 1;
             vector_field.push_back(p0);
             vector_field.push_back(p1);
 
