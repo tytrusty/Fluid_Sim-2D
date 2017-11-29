@@ -59,8 +59,9 @@ float tex_coords[] =
 };
 
 GLfloat red[] = {1.0f, 0.0f, 0.0f, 1.0f };
-GLfloat yellow[] = {1.0f, 1.0f, 0.0f, 1.0f };
+GLfloat field[] = {0.6f, 0.2f, 1.0f, 1.0f };
 
+bool show_velocity = false;
 std::vector<glm::vec2> generate_velocity_field()
 {
     std::vector<glm::vec2> vector_field;
@@ -77,11 +78,6 @@ std::vector<glm::vec2> generate_velocity_field()
                                      i/(float)config::N); 
             float dx = fluid_sim.y(i,j);
             float dy = fluid_sim.x(i,j);
-            float magnitude  = glm::sqrt((dx * dx) + (dy * dy)); 
-           
-            // normalize directional magnitudes
-            dx = 0 ? dx == 0 : dx / magnitude; // normalize
-            dy = 0 ? dy == 0 : dy / magnitude; // normalize
             glm::vec2 p1 = glm::vec2((j + dx * length) / (double)config::N,
                                      (i + dy * length) / (double)config::N);
             p0[0] = p0[0] * 2 - 1;
@@ -90,11 +86,6 @@ std::vector<glm::vec2> generate_velocity_field()
             p1[1] = p1[1] * 2 - 1;
             vector_field.push_back(p0);
             vector_field.push_back(p1);
-
-            // if (row == window_height/2 && col == window_width/2) {
-            //     std::cout << "vectah:  p0: " << p0 << std::endl;
-            //     std::cout << "vectah:  p1: " << p1 << std::endl;
-            // }
         }
     }
     return vector_field;
@@ -127,6 +118,7 @@ KeyCallback(GLFWwindow* window,
     } else if (key == GLFW_KEY_A && action != GLFW_RELEASE) {
     } else if (key == GLFW_KEY_V && action != GLFW_RELEASE) {
         std::cout << "Toggling Velocity Field" << std::endl;
+        show_velocity = !show_velocity;
     } else if (key == GLFW_KEY_G && action != GLFW_RELEASE) {
         std::cout << "Toggling gravity" << std::endl;
         fluid_sim.enable_gravity_ = !fluid_sim.enable_gravity_;
@@ -376,23 +368,26 @@ int main(int argc, char* argv[])
         glLoadIdentity();
 
         // RENDER VECTOR FIELDS //
-        glUseProgram(velocity_program_id);
-        glBindVertexArray(velocity_vao);
-        vector_field = generate_velocity_field();
-        glEnableVertexAttribArray(0);
-        glBindBuffer(GL_ARRAY_BUFFER, vector_vbo);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(float) * vector_field.size() * 2,
-                &vector_field[0], GL_STATIC_DRAW);
-        glVertexAttribPointer(
-                    0, 
-                    2,
-                    GL_FLOAT,
-                    GL_FALSE,
-                    0,
-                    (void*)0
-        );
-        glUniform4fv(velocity_color_id, 1, red);
-        glDrawArrays(GL_LINES, 0, vector_field.size());
+        if (show_velocity) 
+        {
+            glUseProgram(velocity_program_id);
+            glBindVertexArray(velocity_vao);
+            vector_field = generate_velocity_field();
+            glEnableVertexAttribArray(0);
+            glBindBuffer(GL_ARRAY_BUFFER, vector_vbo);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(float) * vector_field.size() * 2,
+                    &vector_field[0], GL_STATIC_DRAW);
+            glVertexAttribPointer(
+                        0, 
+                        2,
+                        GL_FLOAT,
+                        GL_FALSE,
+                        0,
+                        (void*)0
+            );
+            glUniform4fv(velocity_color_id, 1, field);
+            glDrawArrays(GL_LINES, 0, vector_field.size());
+        }
 
         // RENDER HEAT BOUNDARY //
         glUseProgram(heat_program_id);
