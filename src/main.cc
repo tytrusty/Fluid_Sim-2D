@@ -59,6 +59,43 @@ float tex_coords[] =
 };
 
 GLfloat red[] = {1.0f, 0.0f, 0.0f, 1.0f };
+GLfloat yellow[] = {1.0f, 1.0f, 0.0f, 1.0f };
+
+std::vector<glm::vec2> generate_velocity_field()
+{
+    std::vector<glm::vec2> vector_field;
+    int length = 3; // line length
+
+    for (int row = 0; row < window_height; row += 5) {
+        for (int col = 0; col < window_width; col += 5) {
+            // Getting simulation-space coordinates
+            int i = (int) ((row / (double) window_height) * config::N + 1);
+            int j = (int) ((col / (double) window_width) * config::N + 1);
+            i = glm::clamp(i, 1, config::N);
+            j = glm::clamp(j, 1, config::N);
+            glm::vec2 p0 = glm::vec2(j/(float)config::N, 
+                                     i/(float)config::N); 
+            float dx = fluid_sim.y(i,j);
+            float dy = fluid_sim.x(i,j);
+            float magnitude  = glm::sqrt((dx * dx) + (dy * dy)); 
+           
+            // normalize directional magnitudes
+            dx = 0 ? dx == 0 : dx / magnitude; // normalize
+            dy = 0 ? dy == 0 : dy / magnitude; // normalize
+            glm::vec2 p1 = glm::vec2((j + dx * length) / (double)config::N,
+                                     (i + dy * length) / (double)config::N);
+            vector_field.push_back(p0);
+            vector_field.push_back(p1);
+
+            // if (row == window_height/2 && col == window_width/2) {
+            //     std::cout << "vectah:  p0: " << p0 << std::endl;
+            //     std::cout << "vectah:  p1: " << p1 << std::endl;
+            // }
+        }
+    }
+    return vector_field;
+
+}
 
 void
 ErrorCallback(int error, const char* description)
@@ -84,12 +121,13 @@ KeyCallback(GLFWwindow* window,
     } else if (key == GLFW_KEY_W && action != GLFW_RELEASE) {
     } else if (key == GLFW_KEY_S && action != GLFW_RELEASE) {
     } else if (key == GLFW_KEY_A && action != GLFW_RELEASE) {
-    } else if (key == GLFW_KEY_D && action != GLFW_RELEASE) {
+    } else if (key == GLFW_KEY_V && action != GLFW_RELEASE) {
+        std::cout << "Toggling Velocity Field" << std::endl;
     } else if (key == GLFW_KEY_G && action != GLFW_RELEASE) {
-        std::cout << "Flipping gravity" << std::endl;
+        std::cout << "Toggling gravity" << std::endl;
         fluid_sim.enable_gravity_ = !fluid_sim.enable_gravity_;
     } else if (key == GLFW_KEY_H && action != GLFW_RELEASE) {
-        std::cout << "Flipping heat diffusion" << std::endl;
+        std::cout << "Toggling heat diffusion" << std::endl;
         fluid_sim.enable_heat_ = !fluid_sim.enable_heat_;
     } else if (key == GLFW_KEY_R && action != GLFW_RELEASE) {
         std::cout << "Resetting Simulation!" << std::endl;
@@ -201,6 +239,9 @@ int main(int argc, char* argv[])
     // Heat boundary 
     std::vector<glm::vec2> boundary = heat::draw_boundary();
 
+    // Vector field
+    std::vector<glm::vec2> vector_field = generate_velocity_field();
+
     // Setup VBO
     GLuint vbo;
     glGenBuffers(1, &vbo);              // generate 1 buffer (for quad)
@@ -264,6 +305,12 @@ int main(int argc, char* argv[])
     glLinkProgram(heat_program_id);
     CHECK_GL_PROGRAM_ERROR(heat_program_id);
 
+    GLuint velocity_program_id = glCreateProgram();
+    glAttachShader(velocity_program_id, heat_vertex_shader_id);
+    glAttachShader(velocity_program_id, heat_fragment_shader_id);
+    glLinkProgram(velocity_program_id);
+    CHECK_GL_PROGRAM_ERROR(velocity_program_id);
+    
     // Setup Vertex Array Object
     GLuint vao; // vao for dye
     CHECK_GL_ERROR(glGenVertexArrays(1, &vao));
@@ -273,12 +320,18 @@ int main(int argc, char* argv[])
     CHECK_GL_ERROR(glGenVertexArrays(1, &heat_vao));
     CHECK_GL_ERROR(glBindVertexArray(heat_vao));
 
+    GLuint velocity_vao; // vao for heat boundary
+    CHECK_GL_ERROR(glGenVertexArrays(1, &velocity_vao));
+    CHECK_GL_ERROR(glBindVertexArray(velocity_vao));
+
     // Bind fragment attributes.
     CHECK_GL_ERROR(glBindFragDataLocation(program_id, 0, "fragment_color")); 
     CHECK_GL_ERROR(glBindFragDataLocation(heat_program_id, 0, "fragment_color")); 
+    CHECK_GL_ERROR(glBindFragDataLocation(velocity_program_id, 0, "fragment_color")); 
 
     // Setup color uniform
-    GLuint color_id = glGetUniformLocation(heat_program_id, "color");
+    GLuint heat_color_id     = glGetUniformLocation(heat_program_id, "color");
+    GLuint velocity_color_id = glGetUniformLocation(velocity_program_id, "color");
 
     // Send density texture data
     GLuint texture_id = glGetUniformLocation(program_id, "textureSampler");
@@ -311,6 +364,8 @@ int main(int argc, char* argv[])
         glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
 
+        generate_velocity_field();
+
         // RENDER HEAT BOUNDARY //
         glUseProgram(heat_program_id);
         glBindVertexArray(heat_vao);
@@ -328,7 +383,7 @@ int main(int argc, char* argv[])
                     (void*)0
         );
 
-        glUniform4fv(color_id, 1, red);
+        glUniform4fv(heat_color_id, 1, red);
         glDrawArrays(GL_LINE_LOOP, 0, boundary.size());
         
         // RENDER FLUID //
