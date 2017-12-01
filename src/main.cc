@@ -236,7 +236,7 @@ int main(int argc, char* argv[])
     std::cout << "OpenGL version supported:" << version << "\n";
 
     // Heat boundary 
-    std::vector<glm::vec2> boundary = heat::draw_boundary();
+    std::vector<glm::vec2> boundary = fluid_sim.heat_boundary_.draw_boundary();
 
     // Vector field
     std::vector<glm::vec2> vector_field = generate_velocity_field();
@@ -370,6 +370,31 @@ int main(int argc, char* argv[])
         glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
 
+        // RENDER HEAT BOUNDARY //
+        if (show_heat) 
+        {
+            glUseProgram(heat_program_id);
+            glBindVertexArray(heat_vao);
+            boundary = fluid_sim.heat_boundary_.draw_boundary();
+            glEnableVertexAttribArray(0);
+            glBindBuffer(GL_ARRAY_BUFFER, heat_vbo);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(float) * boundary.size() * 2,
+                    &boundary[0], GL_STATIC_DRAW);
+            glVertexAttribPointer(
+                        0, 
+                        2,
+                        GL_FLOAT,
+                        GL_FALSE,
+                        0,
+                        (void*)0
+            );
+            glUniform4fv(heat_color_id, 1, red);
+            glDrawArrays(GL_LINE_LOOP, 0, boundary.size());
+        } else {
+            // Ensure that boundary is updated even if invisible
+            fluid_sim.heat_boundary_.update_boundary(); 
+        }
+
         // RENDER VECTOR FIELDS //
         if (show_velocity) 
         {
@@ -392,33 +417,10 @@ int main(int argc, char* argv[])
             glDrawArrays(GL_LINES, 0, vector_field.size());
         }
 
-        // RENDER HEAT BOUNDARY //
-        if (show_heat) 
-        {
-            glUseProgram(heat_program_id);
-            glBindVertexArray(heat_vao);
-            boundary = heat::draw_boundary();
-            glEnableVertexAttribArray(0);
-            glBindBuffer(GL_ARRAY_BUFFER, heat_vbo);
-            glBufferData(GL_ARRAY_BUFFER, sizeof(float) * boundary.size() * 2,
-                    &boundary[0], GL_STATIC_DRAW);
-            glVertexAttribPointer(
-                        0, 
-                        2,
-                        GL_FLOAT,
-                        GL_FALSE,
-                        0,
-                        (void*)0
-            );
-            glUniform4fv(heat_color_id, 1, red);
-            glDrawArrays(GL_LINE_LOOP, 0, boundary.size());
-        } else {
-            heat::update_boundary(); // still invisibly update boundary
-        }
         
         // RENDER FLUID //
         fluid_sim.simulation_step();
-        // fluid_sim.debug_print();
+        // fluid_sim.debug_print(fluid_sim.viscosity_grid);
 
         glUseProgram(program_id); 
 
@@ -430,16 +432,16 @@ int main(int argc, char* argv[])
         for (int i = 1; i <= config::N; ++i) {
             for (int j = 1; j <= config::N; ++j) {
                 pixels[i-1][j-1] = min((int)fluid_sim.density(i, j), 255); 
-                sum += fluid_sim.density(i,j);
+                sum += fluid_sim.x(i,j);
             }
         }
-        // std::cout << "density sum:  " << sum << std::endl;
-        sum = 0.0f;
-        for (int i = 0; i <= config::N+1; ++i) {
-            for (int j = 0; j <= config::N+1; ++j) {
-                sum += fluid_sim.density(i,j);
-            }
-        }
+        //std::cout << "density sum:  " << sum << std::endl;
+        // sum = 0.0f;
+        // for (int i = 0; i <= config::N+1; ++i) {
+        //     for (int j = 0; j <= config::N+1; ++j) {
+        //         sum += fluid_sim.density(i,j);
+        //     }
+        // }
         // std::cout << "density sum 2:  " << sum << std::endl;
 
         glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, config::N, config::N, GL_RGBA,

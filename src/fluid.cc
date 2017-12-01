@@ -1,5 +1,6 @@
 #include <iostream>
 #include "fluid.h"
+#include "heat.h"
 
 Fluid_Sim::Fluid_Sim (int N, float viscosity, float diffusion, float time_step)
    : N_(N), viscosity_(viscosity), diffusion_(diffusion), time_step_(time_step),
@@ -10,42 +11,29 @@ Fluid_Sim::Fluid_Sim (int N, float viscosity, float diffusion, float time_step)
      viscosity_grid(N)
 {
     viscosity_grid.set_all(viscosity_);
+
 }
 
-#ifdef PROFILE
-	#include <ctime>
-#endif
 void Fluid_Sim::simulation_step()
 {
     // --------- Velocity Solver --------- //
     // Assuming external forces currently stored in x_old and y_old
-#ifdef PROFILE
-	std::clock_t start, end;
-	double duration;
-	start = std::clock();
-# endif
     add_external_forces(x, x_old);
     add_external_forces(y, y_old);
-	
-#ifdef PROFILE
-	end = std::clock();
-	duration = (end - start) / (double) CLOCKS_PER_SEC;
-	std::cout << "add_forces: " << duration << std::endl;
-	start = end;
-#endif
-
+     
+    // Adding gravitational force
     if (enable_gravity_) {
         add_gravity(x);
     }
 
     swap(x, x_old); swap(y, y_old);
 
+    // Viscous heat diffusion
     x.type_ = None;
     y.type_ = None;
-    // Viscous heat diffusion
     if (enable_heat_) {
         // If heat is enabled, we will have a non-uniform viscosity
-        add_heat(viscosity_grid);
+        heat_boundary_.apply_heat(viscosity_grid);
         diffuse_viscosity(x, x_old, viscosity_grid);
         diffuse_viscosity(y, y_old, viscosity_grid);
     } else {
@@ -55,34 +43,13 @@ void Fluid_Sim::simulation_step()
     x.type_ = X_Velocity;
     y.type_ = Y_Velocity;
 
-#ifdef PROFILE
-	end = std::clock();
-	duration = (end - start) / (double) CLOCKS_PER_SEC;
-	std::cout << "diffuse/heat time: " << duration << std::endl;
-	start = end;
-#endif
-
     // Enforce incompressibility
     project(x, y, x_old, y_old);
     swap(x, x_old); swap(y, y_old);
-	
-#ifdef PROFILE
-	end = std::clock();
-	duration = (end - start) / (double) CLOCKS_PER_SEC;
-	std::cout << "project time 1: " << duration << std::endl;
-	start = end;
-#endif
    
     // Self-Advection -- aka move velocity field along the velocity field
     advect(x, x_old, x_old, y_old);
     advect(y, y_old, x_old, y_old);
-
-#ifdef PROFILE
-	end = std::clock();
-	duration = (end - start) / (double) CLOCKS_PER_SEC;
-	std::cout << "advection time: " << duration << std::endl;
-	start = end;
-#endif
 
     // Enforce incompressibility, again
     project(x, y, x_old, y_old);
@@ -139,14 +106,6 @@ void Fluid_Sim::add_gravity(Fluid_Grid<float>& y) {
     }
 }
 
-void Fluid_Sim::add_heat(Fluid_Grid<float>& viscosity) 
-{
-    // for (int i = 1; i <= N_; ++i) {
-    //     for (int j = 1; j <= N_; ++j) {
-    //     }
-    // }
-
-}
 
 void Fluid_Sim::adjust_bounds(Fluid_Grid<float>& grid)
 {
@@ -176,9 +135,9 @@ void Fluid_Sim::gauss_seidel(Fluid_Grid<float>& grid,
                         + grid(i,j-1) + grid(i,j+1))) / c;
             }
         }
+        // Adjust the boundaries of the array after changing values
         adjust_bounds(grid);
     }
-    // Adjust the boundaries of the array after changing values
 }
  
 void Fluid_Sim::gauss_seidel_viscosity(Fluid_Grid<float>& grid, 
@@ -194,9 +153,9 @@ void Fluid_Sim::gauss_seidel_viscosity(Fluid_Grid<float>& grid,
                         + grid(i,j-1) + grid(i,j+1))) / c;
             }
         }
-    }
-    // Adjust the boundaries of the array after changing values
+        // Adjust the boundaries of the array after changing values
         adjust_bounds(grid);
+    }
 }
 
 void Fluid_Sim::diffuse_viscosity(Fluid_Grid<float>& grid, Fluid_Grid<float>& grid_prev,
