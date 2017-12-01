@@ -40,6 +40,8 @@ void Fluid_Sim::simulation_step()
 
     swap(x, x_old); swap(y, y_old);
 
+    x.type_ = None;
+    y.type_ = None;
     // Viscous heat diffusion
     if (enable_heat_) {
         // If heat is enabled, we will have a non-uniform viscosity
@@ -50,6 +52,8 @@ void Fluid_Sim::simulation_step()
         diffuse(x, x_old, viscosity_);
         diffuse(y, y_old, viscosity_);
     }
+    x.type_ = X_Velocity;
+    y.type_ = Y_Velocity;
 
 #ifdef PROFILE
 	end = std::clock();
@@ -79,6 +83,7 @@ void Fluid_Sim::simulation_step()
 	std::cout << "advection time: " << duration << std::endl;
 	start = end;
 #endif
+
     // Enforce incompressibility, again
     project(x, y, x_old, y_old);
 
@@ -136,12 +141,10 @@ void Fluid_Sim::add_gravity(Fluid_Grid<float>& y) {
 
 void Fluid_Sim::add_heat(Fluid_Grid<float>& viscosity) 
 {
-    //
-    for (int i = 1; i <= N_; ++i) {
-        for (int j = 1; j <= N_; ++j) {
-            y(i, j) += -9.8f * time_step_;
-        }
-    }
+    // for (int i = 1; i <= N_; ++i) {
+    //     for (int j = 1; j <= N_; ++j) {
+    //     }
+    // }
 
 }
 
@@ -165,7 +168,7 @@ void Fluid_Sim::adjust_bounds(Fluid_Grid<float>& grid)
 void Fluid_Sim::gauss_seidel(Fluid_Grid<float>& grid, 
         Fluid_Grid<float>& grid_prev, float a, float c)
 {
-    _Pragma("omp parallel for")
+    //_Pragma("omp parallel for")
     for (int step = 0; step < solver_steps; ++step) {
         for (int i = 1; i <= N_; ++i) {
             for (int j = 1; j <= N_; ++j) {
@@ -173,15 +176,15 @@ void Fluid_Sim::gauss_seidel(Fluid_Grid<float>& grid,
                         + grid(i,j-1) + grid(i,j+1))) / c;
             }
         }
+        adjust_bounds(grid);
     }
     // Adjust the boundaries of the array after changing values
-    adjust_bounds(grid);
 }
  
 void Fluid_Sim::gauss_seidel_viscosity(Fluid_Grid<float>& grid, 
         Fluid_Grid<float>& grid_prev, Fluid_Grid<float>& viscosity)
 {
-    _Pragma("omp parallel for")
+    // _Pragma("omp parallel for")
     for (int step = 0; step < solver_steps; ++step) {
         for (int i = 1; i <= N_; ++i) {
             for (int j = 1; j <= N_; ++j) {
@@ -193,7 +196,7 @@ void Fluid_Sim::gauss_seidel_viscosity(Fluid_Grid<float>& grid,
         }
     }
     // Adjust the boundaries of the array after changing values
-    adjust_bounds(grid);
+        adjust_bounds(grid);
 }
 
 void Fluid_Sim::diffuse_viscosity(Fluid_Grid<float>& grid, Fluid_Grid<float>& grid_prev,

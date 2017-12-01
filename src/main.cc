@@ -72,10 +72,10 @@ std::vector<glm::vec2> generate_velocity_field()
     for (int row = 0; row < window_height; row += 5) {
         for (int col = 0; col < window_width; col += 5) {
             // Getting simulation-space coordinates
-            int i = (int) ((row / (double) window_height) * config::N + 1);
-            int j = (int) ((col / (double) window_width) * config::N + 1);
-            i = glm::clamp(i, 1, config::N);
-            j = glm::clamp(j, 1, config::N);
+            int i = (int) ((row / (double) window_height) * (config::N + 2));
+            int j = (int) ((col / (double) window_width)  * (config::N + 2));
+            // i = glm::clamp(i, 1, config::N);
+            // j = glm::clamp(j, 1, config::N);
             glm::vec2 p0 = glm::vec2(j/(float)config::N, 
                                      i/(float)config::N); 
             float dx = fluid_sim.y(i,j);
@@ -425,12 +425,22 @@ int main(int argc, char* argv[])
         // Passing in texture
         glActiveTexture(GL_TEXTURE0);
         int pixels[config::N][config::N];
-        _Pragma("omp parallel for")
+        //_Pragma("omp parallel for")
+        float sum = 0.0;
         for (int i = 1; i <= config::N; ++i) {
             for (int j = 1; j <= config::N; ++j) {
                 pixels[i-1][j-1] = min((int)fluid_sim.density(i, j), 255); 
+                sum += fluid_sim.density(i,j);
             }
         }
+        // std::cout << "density sum:  " << sum << std::endl;
+        sum = 0.0f;
+        for (int i = 0; i <= config::N+1; ++i) {
+            for (int j = 0; j <= config::N+1; ++j) {
+                sum += fluid_sim.density(i,j);
+            }
+        }
+        // std::cout << "density sum 2:  " << sum << std::endl;
 
         glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, config::N, config::N, GL_RGBA,
                 GL_UNSIGNED_BYTE, pixels);
