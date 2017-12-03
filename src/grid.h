@@ -42,7 +42,6 @@ struct Fluid_Grid {
     /** Set all values of the array to some value, v */
     void set_all(T v) {
 		std::fill(array_, array_ + (N_+2)*(N_+2), v);
-        //memset(array_, v, (N_+2)*(N_+2)*sizeof(*array_));
     }
 
     Fluid_Grid(const Fluid_Grid&) = delete;

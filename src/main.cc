@@ -150,11 +150,11 @@ KeyCallback(GLFWwindow* window,
     } else if (key == GLFW_KEY_C && action != GLFW_RELEASE) {
     } else if (key == GLFW_KEY_LEFT_BRACKET && action != GLFW_RELEASE) {
         config::decrease_viscosity();
-        fluid_sim.viscosity_ = config::viscosity;
+        fluid_sim.viscosity_grid.set_all(config::viscosity);
         std::cout << "viscosity decrease: " << config::viscosity << std::endl;
     } else if (key == GLFW_KEY_RIGHT_BRACKET && action != GLFW_RELEASE) {
         config::increase_viscosity();
-        fluid_sim.viscosity_ = config::viscosity;
+        fluid_sim.viscosity_grid.set_all(config::viscosity);
         std::cout << "viscosity increase: " << config::viscosity << std::endl;
     }
 }
@@ -205,6 +205,7 @@ MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
     g_current_button = button;
 }
 
+#include <ctime>
 int main(int argc, char* argv[])
 {
     std::string window_title = "Fluid";
@@ -369,6 +370,7 @@ int main(int argc, char* argv[])
         glOrtho(0, window_width, 0, window_height, 0, 1);
         glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
+        clock_t beg = clock();
 
         // RENDER HEAT BOUNDARY //
         if (show_heat) 
@@ -427,8 +429,8 @@ int main(int argc, char* argv[])
         // Passing in texture
         glActiveTexture(GL_TEXTURE0);
         int pixels[config::N][config::N];
-        //_Pragma("omp parallel for")
         float sum = 0.0;
+        // _Pragma("omp parallel for")
         for (int i = 1; i <= config::N; ++i) {
             for (int j = 1; j <= config::N; ++j) {
                 pixels[i-1][j-1] = min((int)fluid_sim.density(i, j), 255); 
@@ -476,6 +478,8 @@ int main(int argc, char* argv[])
         );
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 8); 
 
+        clock_t end = clock();
+        std::cout << ((end-beg)/(double)CLOCKS_PER_SEC) << std::endl;
         // Poll and swap.
         glfwPollEvents();
         glfwSwapBuffers(window);

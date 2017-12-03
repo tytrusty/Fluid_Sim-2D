@@ -58,7 +58,7 @@ public:
                  if (dist < radius_) {
                     float visc = viscosity(i,j) - visc_rate; 
                     viscosity(i,j) = std::max(0.0f, visc); 
-                    std::cout << "viscosity: " << viscosity(i,j) << std::endl;
+                    // std::cout << "viscosity: " << viscosity(i,j) << std::endl;
                  }
              }
         }

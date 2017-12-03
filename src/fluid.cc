@@ -3,14 +3,14 @@
 #include "heat.h"
 
 Fluid_Sim::Fluid_Sim (int N, float viscosity, float diffusion, float time_step)
-   : N_(N), viscosity_(viscosity), diffusion_(diffusion), time_step_(time_step),
+   : N_(N), diffusion_(diffusion), time_step_(time_step),
      enable_gravity_(false), enable_heat_(false),
      x(N, X_Velocity), x_old(N, X_Velocity), 
      y(N, Y_Velocity), y_old(N, Y_Velocity), 
      density(N, Density), density_old(N, Density),
      viscosity_grid(N)
 {
-    viscosity_grid.set_all(viscosity_);
+    viscosity_grid.set_all(viscosity);
 
 }
 
@@ -32,14 +32,10 @@ void Fluid_Sim::simulation_step()
     x.type_ = None;
     y.type_ = None;
     if (enable_heat_) {
-        // If heat is enabled, we will have a non-uniform viscosity
         heat_boundary_.apply_heat(viscosity_grid);
-        diffuse_viscosity(x, x_old, viscosity_grid);
-        diffuse_viscosity(y, y_old, viscosity_grid);
-    } else {
-        diffuse(x, x_old, viscosity_);
-        diffuse(y, y_old, viscosity_);
-    }
+    } 
+    diffuse_viscosity(x, x_old, viscosity_grid);
+    diffuse_viscosity(y, y_old, viscosity_grid);
     x.type_ = X_Velocity;
     y.type_ = Y_Velocity;
 
@@ -90,7 +86,7 @@ void Fluid_Sim::resize(int N)
 void Fluid_Sim::add_external_forces(Fluid_Grid<float>& target,
         Fluid_Grid<float>& source)
 {
-    _Pragma("omp parallel for")
+    // _Pragma("omp parallel for")
     for (int i = 0; i < (N_+2)*(N_+2); ++i) {
         target.array_[i] += source.array_[i] * time_step_;  
     }   
@@ -98,7 +94,7 @@ void Fluid_Sim::add_external_forces(Fluid_Grid<float>& target,
  
 void Fluid_Sim::add_gravity(Fluid_Grid<float>& y) {
 	float amount = -9.8f * time_step_;
-    _Pragma("omp parallel for")
+    // _Pragma("omp parallel for")
     for (int i = 1; i <= N_; ++i) {
         for (int j = 1; j <= N_; ++j) {
             y(i, j) += amount;
@@ -127,7 +123,7 @@ void Fluid_Sim::adjust_bounds(Fluid_Grid<float>& grid)
 void Fluid_Sim::gauss_seidel(Fluid_Grid<float>& grid, 
         Fluid_Grid<float>& grid_prev, float a, float c)
 {
-    //_Pragma("omp parallel for")
+    // _Pragma("omp parallel for")
     for (int step = 0; step < solver_steps; ++step) {
         for (int i = 1; i <= N_; ++i) {
             for (int j = 1; j <= N_; ++j) {
@@ -175,7 +171,7 @@ void Fluid_Sim::diffuse(Fluid_Grid<float>& grid, Fluid_Grid<float>& grid_prev,
 void Fluid_Sim::project(Fluid_Grid<float>& x, Fluid_Grid<float>& y, 
         Fluid_Grid<float>& p, Fluid_Grid<float>& div)
 {
-    _Pragma("omp parallel for")
+    // _Pragma("omp parallel for")
     for (int i = 1; i <= N_; ++i) {
         for (int j = 1; j <= N_; ++j) {
             div(i,j) = (x(i+1,j) - x(i-1,j) + y(i, j+1) - y(i, j -1)) * -0.5f / N_;
@@ -186,7 +182,7 @@ void Fluid_Sim::project(Fluid_Grid<float>& x, Fluid_Grid<float>& y,
     adjust_bounds(p);
     gauss_seidel (p, div, 1, 4);
     
-    _Pragma("omp parallel for")
+    // _Pragma("omp parallel for")
     for (int i = 1; i <= N_; ++i) {
         for (int j = 1; j <= N_; ++j) {
             x(i,j) -=  0.5f * N_ * (p(i+1,j) - p(i-1,j));

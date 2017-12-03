@@ -27,7 +27,6 @@ inline void swap(Fluid_Grid<float>& v0, Fluid_Grid<float>& v1) {
 
 struct Fluid_Sim {
     int N_;                      // simulation dimension
-    float viscosity_;            // velocity diffusion rate
     float diffusion_;            // density diffusion rate
     float time_step_;            // time between simulation steps
     bool enable_heat_;           // is heat diffusion enabled
