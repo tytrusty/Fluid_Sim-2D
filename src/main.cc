@@ -59,7 +59,7 @@ float tex_coords[] =
 };
 
 GLfloat red[] = {1.0f, 0.0f, 0.0f, 1.0f };
-GLfloat blue[] = {0.0f, 0.0f, 1.0f, 1.0f };
+GLfloat blue[] = {0.2f, 0.2f, 1.0f, 1.0f };
 GLfloat field[] = {0.6f, 0.2f, 1.0f, 1.0f };
 
 bool show_velocity = false;
@@ -245,8 +245,8 @@ int main(int argc, char* argv[])
     std::vector<glm::vec2> vector_field = generate_velocity_field();
 
     // Initialize liquid
-    std::vector<glm::vec2> liquid;
-    fluid_sim.level_set_.extract_surface(liquid);
+    // std::vector<glm::vec2> liquid;
+    //fluid_sim.level_set_.extract_surface(liquid);
 
     // Setup VBO
     GLuint vbo;
@@ -280,8 +280,8 @@ int main(int argc, char* argv[])
     GLuint liquid_vbo;
     glGenBuffers(1, &liquid_vbo);  // generate buffer (for liquid);
     glBindBuffer(GL_ARRAY_BUFFER, liquid_vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * liquid.size() * 2,
-            &liquid[0], GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float),
+            NULL, GL_STATIC_DRAW);
     
     // Setup vertex shader
     const char* vertex_source_pointer = vertex_shader;
@@ -406,12 +406,9 @@ int main(int argc, char* argv[])
         {
             glUseProgram(liquid_program_id);
             glBindVertexArray(liquid_vao);
-            liquid.clear();
-            fluid_sim.level_set_.extract_surface(liquid);
+            //liquid.clear();
             glEnableVertexAttribArray(0);
             glBindBuffer(GL_ARRAY_BUFFER, liquid_vbo);
-            glBufferData(GL_ARRAY_BUFFER, sizeof(float) * liquid.size() * 2,
-                    &liquid[0], GL_STATIC_DRAW);
             glVertexAttribPointer(
                         0, 
                         2,
@@ -421,7 +418,8 @@ int main(int argc, char* argv[])
                         (void*)0
             );
             glUniform4fv(liquid_color_id, 1, blue);
-            glDrawArrays(GL_TRIANGLE_FAN, 0, liquid.size());
+            fluid_sim.level_set_.extract_surface();
+//            glDrawArrays(GL_TRIANGLE_FAN, 0, liquid.size());
         }
 
         // RENDER HEAT BOUNDARY //

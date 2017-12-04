@@ -5,6 +5,9 @@
 #include <glm/gtx/io.hpp>
 #include <vector>
 #include "grid.h"
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
+#include <debuggl.h>
 
 struct LevelSet {
     int N_;
@@ -25,7 +28,7 @@ struct LevelSet {
 
     /** Add an object to levelset */
     void add_object(int width, int height) {
-        int r_begin = std::max((N_ - height) / 2, 1);
+        int r_begin = 1; //std::max((N_ - height) / 2, 1);
         int r_end   = std::min(r_begin + height, N_);
         int c_begin = std::max((N_ - width) / 2, 1);
         int c_end   = std::min(c_begin + width, N_);
@@ -47,7 +50,7 @@ struct LevelSet {
      * Run marching cubes on given cell 
      * @returns The number of vertices discovered by algorithm
      */
-    int marching_cubes(int row, int col, std::vector<glm::vec2>& vertices) 
+    int marching_cubes(int row, int col, glm::vec2 vertices[8]) 
     {
         int vertex_cnt = 0;
         float cell_ratio = 1 / (float)N_;
@@ -63,11 +66,11 @@ struct LevelSet {
 
         for (int i = 0; i < 4; ++i) {
             // First check if cell is in liquid 
+
             if (dist_grid(idx[i][0], idx[i][1]) < 0.0f) {
                 glm::vec2 new_vertex;
-                new_vertex[0] = (idx[i][0] * cell_ratio * 2) - 1.0f;
-                new_vertex[1] = (idx[i][1] * cell_ratio * 2) - 1.0f;
-                vertices.push_back(new_vertex);
+                vertices[vertex_cnt][0] = (idx[i][0] * cell_ratio * 2) - 1.0f;
+                vertices[vertex_cnt][1] = (idx[i][1] * cell_ratio * 2) - 1.0f;
                 ++vertex_cnt;
             }
             
@@ -89,15 +92,25 @@ struct LevelSet {
                 glm::vec2 p1(idx[(i+1)%4][0] * cell_ratio, idx[(i+1)%4][1] * cell_ratio);
 
                 // Adding new vertex
-                glm::vec2 new_vertex;
-                new_vertex[0] = (1 - p0_weight) * p0[0] + (p0_weight) * p1[0];
-                new_vertex[1] = (1 - p0_weight) * p0[1] + (p0_weight) * p1[1];
-                new_vertex[0] = (new_vertex[0] * 2) - 1.0f;
-                new_vertex[1] = (new_vertex[1] * 2) - 1.0f;
-                vertices.push_back(new_vertex);
+                glm::vec2 vertices[vertex_cnt];
+                vertices[vertex_cnt][0] = (1 - p0_weight) * p0[0] + (p0_weight) * p1[0];
+                vertices[vertex_cnt][1] = (1 - p0_weight) * p0[1] + (p0_weight) * p1[1];
+                vertices[vertex_cnt][0] = (vertices[vertex_cnt][0] * 2) - 1.0f;
+                vertices[vertex_cnt][1] = (vertices[vertex_cnt][1] * 2) - 1.0f;
                 ++vertex_cnt;
             }
+        }
 
+        if (vertex_cnt < 3 && vertex_cnt > 0) {
+            std::cout << "bullshit: " << std::endl;
+            for (int i = 0; i < vertex_cnt; ++i) {
+                for (int j = 0; j < 4; ++j) {
+                    std::cout << "idx[j][0]: " << idx[j][0] << " idj[j][1] " << idx[j][1] << std::endl;
+                    std::cout << "dist: " << dist_grid(idx[j][0], idx[j][1]) << std::endl;
+
+                }
+                std::cout << "\ti: " << i << " " << vertices[i] << std::endl;
+            }
         }
         return vertex_cnt;
     }
@@ -121,22 +134,25 @@ struct LevelSet {
      * For each signed distance cell, run my blazingly hyper speed marching
      * squares algorithm to determine the surface vertices
      */
-    void extract_surface(std::vector<glm::vec2>& vertices) 
+    void extract_surface() 
     {
         // Reset global volume
         volume_ = 0.0f;
 
+        glm::vec2 vertices[8];
         for (int r = 1; r <= N_; ++r) {
             for (int c = 1; c <= N_; ++c) {
                 int vertex_cnt = marching_cubes(r, c, vertices); 
-                int start = vertices.size();
-                int end   = start + vertex_cnt;
+                if (vertex_cnt) {
+                    glBufferData(GL_ARRAY_BUFFER, vertex_cnt * sizeof(float) * 2,
+                        vertices, GL_STATIC_DRAW);
+                    glDrawArrays(GL_TRIANGLE_FAN, 0, vertex_cnt * sizeof(float) * 2);
+                }
                 // volume_ += calc_volume(vertices, start, end);
                 // std::cout << "vertices.size()" << start << " for (i,j) : " << r << ", " << c << std::endl;
             }
         }
     }
-
 };
 
 #endif // LEVELSET_H
