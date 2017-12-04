@@ -94,6 +94,8 @@ void Fluid_Sim::add_external_forces(Fluid_Grid<float>& target,
  
 void Fluid_Sim::add_gravity(Fluid_Grid<float>& y) {
 	float amount = -9.8f * time_step_;
+    // ALSO ADD GRAVITY ON CELLS DIRECTLY ABOVE
+    // AKA IF CELL HAS A DUDE BELOW IT THAT IS IN LIQUID, THEN LET GRAVITY DO SHIT
     for (int i = 1; i <= N_; ++i) {
         for (int j = 1; j <= N_; ++j) {
             if (levelset.is_liquid(i, j)) {
