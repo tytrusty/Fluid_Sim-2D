@@ -74,8 +74,6 @@ std::vector<glm::vec2> generate_velocity_field()
             // Getting simulation-space coordinates
             int i = (int) ((row / (double) window_height) * (config::N + 2));
             int j = (int) ((col / (double) window_width)  * (config::N + 2));
-            // i = glm::clamp(i, 1, config::N);
-            // j = glm::clamp(j, 1, config::N);
             glm::vec2 p0 = glm::vec2(j/(float)config::N, 
                                      i/(float)config::N); 
             float dx = fluid_sim.y(i,j);
@@ -479,7 +477,7 @@ int main(int argc, char* argv[])
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 8); 
 
         clock_t end = clock();
-        std::cout << ((end-beg)/(double)CLOCKS_PER_SEC) << std::endl;
+        // std::cout << ((end-beg)/(double)CLOCKS_PER_SEC) << std::endl;
         // Poll and swap.
         glfwPollEvents();
         glfwSwapBuffers(window);
