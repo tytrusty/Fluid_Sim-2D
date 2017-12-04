@@ -69,17 +69,17 @@ struct LevelSet {
 
             if (dist_grid(idx[i][0], idx[i][1]) < 0.0f) {
                 glm::vec2 new_vertex;
-                vertices[vertex_cnt][0] = (idx[i][0] * cell_ratio * 2) - 1.0f;
-                vertices[vertex_cnt][1] = (idx[i][1] * cell_ratio * 2) - 1.0f;
+                vertices[vertex_cnt][1] = (idx[i][0] * cell_ratio * 2) - 1.0f;
+                vertices[vertex_cnt][0] = (idx[i][1] * cell_ratio * 2) - 1.0f;
                 ++vertex_cnt;
             }
             
             // Now check for surface intersections
             // If signs are opposite then we know that the surface
             // crosses between these two cells. 
-            int sign = dist_grid(idx[i][0], idx[i][1]) 
+            float sign = dist_grid(idx[i][0], idx[i][1]) 
                     *  dist_grid(idx[(i+1)%4][0], idx[(i+1)%4][1]);
-            
+        
             if (sign < 0.0f) {
                 float dist0 = dist_grid(idx[i][0], idx[i][1]);
                 float dist1 = dist_grid(idx[(i+1)%4][0], idx[(i+1)%4][1]);
@@ -95,23 +95,20 @@ struct LevelSet {
                 glm::vec2 vertices[vertex_cnt];
                 vertices[vertex_cnt][0] = (1 - p0_weight) * p0[0] + (p0_weight) * p1[0];
                 vertices[vertex_cnt][1] = (1 - p0_weight) * p0[1] + (p0_weight) * p1[1];
-                vertices[vertex_cnt][0] = (vertices[vertex_cnt][0] * 2) - 1.0f;
-                vertices[vertex_cnt][1] = (vertices[vertex_cnt][1] * 2) - 1.0f;
+                vertices[vertex_cnt][1] = (vertices[vertex_cnt][0] * 2) - 1.0f;
+                vertices[vertex_cnt][0] = (vertices[vertex_cnt][1] * 2) - 1.0f;
                 ++vertex_cnt;
             }
         }
 
-        if (vertex_cnt < 3 && vertex_cnt > 0) {
-            std::cout << "bullshit: " << std::endl;
-            for (int i = 0; i < vertex_cnt; ++i) {
-                for (int j = 0; j < 4; ++j) {
-                    std::cout << "idx[j][0]: " << idx[j][0] << " idj[j][1] " << idx[j][1] << std::endl;
-                    std::cout << "dist: " << dist_grid(idx[j][0], idx[j][1]) << std::endl;
-
-                }
-                std::cout << "\ti: " << i << " " << vertices[i] << std::endl;
+        if (vertex_cnt) {
+            std::cout << "considering cell: row: " << row << " col: " << col << std::endl; 
+            for (int i = 0; i < vertex_cnt; ++i ) {
+                std::cout << "v_" << i << " i: " << vertices[i][0] << std::endl;
+                std::cout << "v_" << i << " j: " << vertices[i][1] << std::endl;
             }
         }
+
         return vertex_cnt;
     }
 

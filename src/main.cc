@@ -492,9 +492,6 @@ int main(int argc, char* argv[])
         // for (int i = 0; i <= config::N+1; ++i) {
         //     for (int j = 0; j <= config::N+1; ++j) {
         //         sum += fluid_sim.density(i,j);
-        //     }
-        // }
-        // std::cout << "density sum 2:  " << sum << std::endl;
 
         glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, config::N, config::N, GL_RGBA,
                 GL_UNSIGNED_BYTE, pixels);
