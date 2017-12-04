@@ -59,6 +59,7 @@ float tex_coords[] =
 };
 
 GLfloat red[] = {1.0f, 0.0f, 0.0f, 1.0f };
+GLfloat blue[] = {0.0f, 1.0f, 0.0f, 1.0f };
 GLfloat field[] = {0.6f, 0.2f, 1.0f, 1.0f };
 
 bool show_velocity = false;
@@ -180,6 +181,7 @@ MousePosCallback(GLFWwindow* window, double mouse_x, double mouse_y)
     int j = (int) ((current_x / (double) window_width) * config::N + 1);
     i = glm::clamp(i, 1, config::N);
     j = glm::clamp(j, 1, config::N);
+    // std::cout << "blah: i: " << i << " j: " << j << " sgndist : " << fluid_sim.level_set_.dist_grid(i,j) << std::endl;
 
     // If dragging the mouse, influence the velocity field
     // If clicking mouse add density AKA add dye
@@ -240,6 +242,10 @@ int main(int argc, char* argv[])
     // Vector field
     std::vector<glm::vec2> vector_field = generate_velocity_field();
 
+    // Initialize liquid
+    std::vector<glm::vec2> liquid;
+    fluid_sim.level_set_.extract_surface(liquid);
+
     // Setup VBO
     GLuint vbo;
     glGenBuffers(1, &vbo);              // generate 1 buffer (for quad)
@@ -260,13 +266,21 @@ int main(int argc, char* argv[])
     glBufferData(GL_ARRAY_BUFFER, sizeof(float) * boundary.size() * 2,
             &boundary[0], GL_STATIC_DRAW);
 
-    // Setting up VBO for heat boundary
+    // Setting up VBO for vector field 
     GLuint vector_vbo;
-    glGenBuffers(1, &vector_vbo);  // generate buffer (for heat boundary);
+    glGenBuffers(1, &vector_vbo);  // generate buffer (for vector field);
     glBindBuffer(GL_ARRAY_BUFFER, vector_vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(float) * vector_field.size() * 2,
             &vector_field[0], GL_STATIC_DRAW);
 
+
+    // Setting up VBO for vector field 
+    GLuint liquid_vbo;
+    glGenBuffers(1, &liquid_vbo);  // generate buffer (for liquid);
+    glBindBuffer(GL_ARRAY_BUFFER, liquid_vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * liquid.size() * 2,
+            &liquid[0], GL_STATIC_DRAW);
+    
     // Setup vertex shader
     const char* vertex_source_pointer = vertex_shader;
     GLuint vertex_shader_id = glCreateShader(GL_VERTEX_SHADER);
@@ -304,18 +318,26 @@ int main(int argc, char* argv[])
     glLinkProgram(program_id);
     CHECK_GL_PROGRAM_ERROR(program_id);
 
+    // Heat Boundary Program
     GLuint heat_program_id = glCreateProgram();
     glAttachShader(heat_program_id, heat_vertex_shader_id);
     glAttachShader(heat_program_id, heat_fragment_shader_id);
     glLinkProgram(heat_program_id);
     CHECK_GL_PROGRAM_ERROR(heat_program_id);
 
+    // Vector Field Program
     GLuint velocity_program_id = glCreateProgram();
     glAttachShader(velocity_program_id, heat_vertex_shader_id);
     glAttachShader(velocity_program_id, heat_fragment_shader_id);
     glLinkProgram(velocity_program_id);
     CHECK_GL_PROGRAM_ERROR(velocity_program_id);
     
+    GLuint liquid_program_id = glCreateProgram();
+    glAttachShader(liquid_program_id, heat_vertex_shader_id);
+    glAttachShader(liquid_program_id, heat_fragment_shader_id);
+    glLinkProgram(liquid_program_id);
+    CHECK_GL_PROGRAM_ERROR(liquid_program_id);
+
     // Setup Vertex Array Object
     GLuint vao; // vao for dye
     CHECK_GL_ERROR(glGenVertexArrays(1, &vao));
@@ -329,14 +351,20 @@ int main(int argc, char* argv[])
     CHECK_GL_ERROR(glGenVertexArrays(1, &velocity_vao));
     CHECK_GL_ERROR(glBindVertexArray(velocity_vao));
 
+    GLuint liquid_vao; // vao for liquid 
+    CHECK_GL_ERROR(glGenVertexArrays(1, &liquid_vao));
+    CHECK_GL_ERROR(glBindVertexArray(liquid_vao));
+
     // Bind fragment attributes.
     CHECK_GL_ERROR(glBindFragDataLocation(program_id, 0, "fragment_color")); 
     CHECK_GL_ERROR(glBindFragDataLocation(heat_program_id, 0, "fragment_color")); 
     CHECK_GL_ERROR(glBindFragDataLocation(velocity_program_id, 0, "fragment_color")); 
+    CHECK_GL_ERROR(glBindFragDataLocation(liquid_program_id, 0, "fragment_color")); 
 
     // Setup color uniform
     GLuint heat_color_id     = glGetUniformLocation(heat_program_id, "color");
     GLuint velocity_color_id = glGetUniformLocation(velocity_program_id, "color");
+    GLuint liquid_color_id   = glGetUniformLocation(liquid_program_id, "color");
 
     // Send density texture data
     GLuint texture_id = glGetUniformLocation(program_id, "textureSampler");
@@ -369,6 +397,28 @@ int main(int argc, char* argv[])
         glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
         clock_t beg = clock();
+
+        bool show_liquid = 1;
+        // RENDER HEAT BOUNDARY //
+        if (show_liquid) 
+        {
+            glUseProgram(liquid_program_id);
+            glBindVertexArray(liquid_vao);
+            glEnableVertexAttribArray(0);
+            glBindBuffer(GL_ARRAY_BUFFER, liquid_vbo);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(float) * liquid.size() * 2,
+                    &liquid[0], GL_STATIC_DRAW);
+            glVertexAttribPointer(
+                        0, 
+                        2,
+                        GL_FLOAT,
+                        GL_FALSE,
+                        0,
+                        (void*)0
+            );
+            glUniform4fv(liquid_color_id, 1, blue);
+            glDrawArrays(GL_TRIANGLE_FAN, 0, liquid.size());
+        }
 
         // RENDER HEAT BOUNDARY //
         if (show_heat) 

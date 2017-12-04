@@ -33,7 +33,7 @@ struct Fluid_Sim {
     bool enable_heat_;           // is heat diffusion enabled
     bool enable_gravity_;        // is gravity enabled
     heat heat_boundary_;
-    LevelSet levelset;
+    LevelSet level_set_;
     const int solver_steps = 30; // linear equation solver iterations
     Fluid_Grid<float> x, x_old,
                       y, y_old,

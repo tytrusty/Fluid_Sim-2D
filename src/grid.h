@@ -55,6 +55,17 @@ struct Fluid_Grid {
     T& operator () (int i, int j) { 
         return array_[i + (N_+2) * j]; 
     }    
+
+    void debug_print () {
+        printf("----- DEBUG PRINT -----\n");
+        for (int i = 1; i <= N_; ++i) {
+            for (int j = 1; j <= N_; ++j) {
+                printf("%.3f ", (*this)(i,j));
+            }
+            printf("\n");
+        }
+        printf("\n");
+    }
 };
 
 #endif // GRID_H

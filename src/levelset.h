@@ -21,6 +21,22 @@ struct LevelSet {
         dist_grid.set_all(1.0f); // init out of liquid state
     }
 
+    /** Add an object to levelset */
+    void add_object(int width, int height) {
+        int r_begin = std::max((N_ - height) / 2, 1);
+        int r_end   = std::min(r_begin + height, N_);
+        int c_begin = std::max((N_ - width) / 2, 1);
+        int c_end   = std::min(c_begin + width, N_);
+        std::cout << "row begin: " << r_begin << std::endl;
+        std::cout << "row end: " << r_end << std::endl;
+        for (int r = r_begin; r <= r_end; ++r) {
+            for (int c = c_begin; c <= c_end; ++c) {
+                dist_grid(r, c) = -1.0f; // in liquid
+            }
+        }
+        dist_grid.debug_print();
+    }
+
     bool is_liquid(int row, int col) {
         return dist_grid(row, col) < 0.0f;
     }
@@ -29,7 +45,7 @@ struct LevelSet {
      * Run marching cubes on given cell 
      * @returns The number of vertices discovered by algorithm
      */
-    int marching_cubes(int row, int col, glm::vec2 vertices[8]) 
+    int marching_cubes(int row, int col, std::vector<glm::vec2>& vertices) 
     {
         int vertex_cnt = 0;
         float cell_ratio = 1 / (float)N_;
@@ -46,8 +62,10 @@ struct LevelSet {
         for (int i = 0; i < 4; ++i) {
             // First check if cell is in liquid 
             if (dist_grid(idx[i][0], idx[i][1]) < 0.0f) {
-                vertices[vertex_cnt][0] = idx[i][0] * cell_ratio;
-                vertices[vertex_cnt][1] = idx[i][1] * cell_ratio;
+                glm::vec2 new_vertex;
+                new_vertex[0] = idx[i][0] * cell_ratio;
+                new_vertex[1] = idx[i][1] * cell_ratio;
+                vertices.push_back(new_vertex);
                 ++vertex_cnt;
             }
             
@@ -69,8 +87,10 @@ struct LevelSet {
                 glm::vec2 p1(idx[(i+1)%4][0] * cell_ratio, idx[(i+1)%4][1] * cell_ratio);
 
                 // Adding new vertex
-                vertices[vertex_cnt][0] = (1 - p0_weight) * p0[0] + (p0_weight) * p1[0];
-                vertices[vertex_cnt][1] = (1 - p0_weight) * p0[1] + (p0_weight) * p1[1];
+                glm::vec2 new_vertex;
+                new_vertex[0] = (1 - p0_weight) * p0[0] + (p0_weight) * p1[0];
+                new_vertex[1] = (1 - p0_weight) * p0[1] + (p0_weight) * p1[1];
+                vertices.push_back(new_vertex);
                 ++vertex_cnt;
             }
 
@@ -79,12 +99,16 @@ struct LevelSet {
     }
 
     /** Basic area of a polygon computation */
-    inline float calc_volume(glm::vec2 vertices[8], int cnt) {
+    inline float calc_volume(std::vector<glm::vec2> vertices, int start, int end) {
         float volume = 0.0f;
-        for (int i = 0; i < cnt; ++i) {
+        int i_next;
+        for (int i = start; i < end; ++i) {
             // x1*y2 - x2*y1 + ...
-            volume += (vertices[i][1] * vertices[(i+1)%cnt][0])
-                    - (vertices[i][0] * vertices[(i+1)%cnt][1]); 
+            i_next = i+1; 
+            if (i_next == end) i_next = start; 
+
+            volume += (vertices[i][1] * vertices[i_next][0])
+                    - (vertices[i][0] * vertices[i_next][1]); 
         }
         return volume / 2.0f;
     }
@@ -93,27 +117,20 @@ struct LevelSet {
      * For each signed distance cell, run my blazingly hyper speed marching
      * squares algorithm to determine the surface vertices
      */
-    void extract_surface(bool render = true) 
+    void extract_surface(std::vector<glm::vec2>& vertices) 
     {
-        glm::vec2 vertices[8]; 
-
         // Reset global volume
         volume_ = 0.0f;
 
         for (int r = 1; r <= N_; ++r) {
             for (int c = 1; c <= N_; ++c) {
                 int vertex_cnt = marching_cubes(r, c, vertices); 
-                volume_ += calc_volume(vertices, vertex_cnt);
-                if (render) {
-                    render_liquid(vertices);
-                }
+                int start = vertices.size();
+                int end   = start + vertex_cnt;
+                // volume_ += calc_volume(vertices, start, end);
+                // std::cout << "vertices.size()" << start << " for (i,j) : " << r << ", " << c << std::endl;
             }
         }
-    }
-
-    /** Draw Liquid */
-    void render_liquid(glm::vec2 vertices[8]) {
-
     }
 
 };
