@@ -5,6 +5,7 @@
 #include <string.h>
 #include "heat.h"
 #include "grid.h"
+#include "levelset.h"
 
 #define FOR_EVERY(N) for(int k=0; k < (N+2)*(N+2); ++k) {int i=k%(N); int j=k/(N);
 #define END_FOR }
@@ -32,6 +33,7 @@ struct Fluid_Sim {
     bool enable_heat_;           // is heat diffusion enabled
     bool enable_gravity_;        // is gravity enabled
     heat heat_boundary_;
+    LevelSet levelset;
     const int solver_steps = 30; // linear equation solver iterations
     Fluid_Grid<float> x, x_old,
                       y, y_old,

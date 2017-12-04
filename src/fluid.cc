@@ -8,7 +8,7 @@ Fluid_Sim::Fluid_Sim (int N, float viscosity, float diffusion, float time_step)
      x(N, X_Velocity), x_old(N, X_Velocity), 
      y(N, Y_Velocity), y_old(N, Y_Velocity), 
      density(N, Density), density_old(N, Density),
-     viscosity_grid(N)
+     viscosity_grid(N), levelset(N) 
 {
     viscosity_grid.set_all(viscosity);
 
@@ -86,18 +86,19 @@ void Fluid_Sim::resize(int N)
 void Fluid_Sim::add_external_forces(Fluid_Grid<float>& target,
         Fluid_Grid<float>& source)
 {
-    // _Pragma("omp parallel for")
     for (int i = 0; i < (N_+2)*(N_+2); ++i) {
+        //TODO ---- DONT ADD IF NOT LIQUID DUMMY
         target.array_[i] += source.array_[i] * time_step_;  
     }   
 }
  
 void Fluid_Sim::add_gravity(Fluid_Grid<float>& y) {
 	float amount = -9.8f * time_step_;
-    // _Pragma("omp parallel for")
     for (int i = 1; i <= N_; ++i) {
         for (int j = 1; j <= N_; ++j) {
-            y(i, j) += amount;
+            if (levelset.is_liquid(i, j)) {
+                y(i, j) += amount;
+            }
         }
     }
 }
