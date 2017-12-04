@@ -115,10 +115,10 @@ void Fluid_Sim::adjust_bounds(Fluid_Grid<float>& grid)
 {
     // Handling edges
     for (int i = 1; i <= N_; ++i) {
-        grid(0,    i) = (grid.type_ == X_Velocity) ? -grid(1, i)  : grid(1,  i); 
-        grid(N_+1, i) = (grid.type_ == X_Velocity) ? -grid(N_, i) : grid(N_, i); 
-        grid(i,    0) = (grid.type_ == Y_Velocity) ? -grid(i, 1)  : grid(i,  1); 
-        grid(i, N_+1) = (grid.type_ == Y_Velocity) ? -grid(i, N_) : grid(i, N_); 
+        grid(0,    i) = (grid.type_ == X_Velocity) ? 0 /* -grid(1, i) */ : grid(1,  i); 
+        grid(N_+1, i) = (grid.type_ == X_Velocity) ? 0 /* -grid(N_, i)*/ : grid(N_, i); 
+        grid(i,    0) = (grid.type_ == Y_Velocity) ? 0 /* -grid(i, 1) */ : grid(i,  1); 
+        grid(i, N_+1) = (grid.type_ == Y_Velocity) ? 0 /* -grid(i, N_)*/ : grid(i, N_); 
     }
 
     // Handling corners -- average out the two nearest
