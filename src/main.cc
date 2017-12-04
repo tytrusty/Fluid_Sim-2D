@@ -59,7 +59,7 @@ float tex_coords[] =
 };
 
 GLfloat red[] = {1.0f, 0.0f, 0.0f, 1.0f };
-GLfloat blue[] = {0.0f, 1.0f, 0.0f, 1.0f };
+GLfloat blue[] = {0.0f, 0.0f, 1.0f, 1.0f };
 GLfloat field[] = {0.6f, 0.2f, 1.0f, 1.0f };
 
 bool show_velocity = false;
@@ -401,11 +401,13 @@ int main(int argc, char* argv[])
         clock_t beg = clock();
 
         bool show_liquid = 1;
-        // RENDER HEAT BOUNDARY //
+        // RENDER LIQUID //
         if (show_liquid) 
         {
             glUseProgram(liquid_program_id);
             glBindVertexArray(liquid_vao);
+            liquid.clear();
+            fluid_sim.level_set_.extract_surface(liquid);
             glEnableVertexAttribArray(0);
             glBindBuffer(GL_ARRAY_BUFFER, liquid_vbo);
             glBufferData(GL_ARRAY_BUFFER, sizeof(float) * liquid.size() * 2,

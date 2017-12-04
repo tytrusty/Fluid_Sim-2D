@@ -16,8 +16,9 @@ struct LevelSet {
      * > 0 indicates above the surface (out of liquid)
      */
     Fluid_Grid<float> dist_grid; 
+    Fluid_Grid<float> dist_grid_old; 
     
-    LevelSet (int N) : N_(N), volume_(0.0f), dist_grid(N)
+    LevelSet (int N) : N_(N), volume_(0.0f), dist_grid(N), dist_grid_old(N)
     {
         dist_grid.set_all(1.0f); // init out of liquid state
     }

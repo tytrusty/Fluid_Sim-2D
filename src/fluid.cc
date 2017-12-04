@@ -57,7 +57,12 @@ void Fluid_Sim::simulation_step()
     swap(density, density_old);
     advect(density, density_old, x, y);
 
+    // -- Level Set Advection -- // 
+    swap(level_set_.dist_grid, level_set_.dist_grid_old);
+    advect(level_set_.dist_grid, level_set_.dist_grid_old, x, y);
+
     density_old.reset();
+    level_set_.dist_grid_old.reset();
     x_old.reset();
     y_old.reset();
 }
