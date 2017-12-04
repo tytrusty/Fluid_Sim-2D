@@ -227,14 +227,6 @@ void Fluid_Sim::advect(Fluid_Grid<float>& grid, Fluid_Grid<float>& grid_prev,
             x_w = x - x_lo; // x parametric weight
             y_w = y - y_lo; // y parametric weight
             
-            // if ( i == 1 && j == 50) {
-            //     std::cout << "x: " << x << std::endl;
-            //     std::cout << "x_lo : " << x_lo << std::endl; 
-            //     std::cout << "x_hi : " << x_hi << std::endl; 
-            //     std::cout << "y_lo : " << y_lo << std::endl;
-            //     std::cout << "y_hi : " << y_hi << std::endl;
-            // }
-
             // Bilinearly interpolating the new scalar value
             grid(i,j) = 
                 (1 - x_w) * lerp(grid_prev(x_lo, y_lo), grid_prev(x_lo, y_hi), y_w)
