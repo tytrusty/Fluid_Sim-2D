@@ -1,11 +1,13 @@
 #ifndef LEVELSET_H
 #define LEVELSET_H
 
-#include "grid.h"
 #include <glm/glm.hpp>
+#include <vector>
+#include "grid.h"
 
 struct LevelSet {
     int N_;
+    float volume_;
 
     /**
      * Signed distance grid.
@@ -14,7 +16,7 @@ struct LevelSet {
      */
     Fluid_Grid<float> dist_grid; 
     
-    LevelSet (int N) : N_(N), dist_grid(N)
+    LevelSet (int N) : N_(N), volume_(0.0f), dist_grid(N)
     {
         dist_grid.set_all(1.0f); // init out of liquid state
     }
@@ -76,14 +78,44 @@ struct LevelSet {
         return vertex_cnt;
     }
 
+    /** Basic area of a polygon computation */
+    inline float calc_volume(glm::vec2 vertices[8], int cnt) {
+        float volume = 0.0f;
+        for (int i = 0; i < cnt; ++i) {
+            // x1*y2 - x2*y1 + ...
+            volume += (vertices[i][1] * vertices[(i+1)%cnt][0])
+                    - (vertices[i][0] * vertices[(i+1)%cnt][1]); 
+        }
+        return volume / 2.0f;
+    }
+
     /**
      * For each signed distance cell, run my blazingly hyper speed marching
      * squares algorithm to determine the surface vertices
      */
-    void extract_surface() 
+    void extract_surface(bool render = true) 
     {
+        glm::vec2 vertices[8]; 
+
+        // Reset global volume
+        volume_ = 0.0f;
+
+        for (int r = 1; r <= N_; ++r) {
+            for (int c = 1; c <= N_; ++c) {
+                int vertex_cnt = marching_cubes(r, c, vertices); 
+                volume_ += calc_volume(vertices, vertex_cnt);
+                if (render) {
+                    render_liquid(vertices);
+                }
+            }
+        }
+    }
+
+    /** Draw Liquid */
+    void render_liquid(glm::vec2 vertices[8]) {
 
     }
+
 };
 
 #endif // LEVELSET_H
