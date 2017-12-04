@@ -190,12 +190,14 @@ MousePosCallback(GLFWwindow* window, double mouse_x, double mouse_y)
         fluid_sim.y_old(i, j) = (current_x - prev_x) * 10.0f;
     } else if (add_density) {
         // fluid_sim.density_old(i, j) = 100.0f;
-        for (int x = max(i - 4, 0); x < min(i + 4, config::N); ++x) {
-            for (int y = max(j - 4, 0); y < min(j + 4, config::N); ++y) {
+        int radius = 1;
+        for (int x = max(i - radius, 0); x < min(i + radius, config::N); ++x) {
+            for (int y = max(j - radius, 0); y < min(j + radius, config::N); ++y) {
                 fluid_sim.density_old(x, y) = 250.0f;  
             }
         }
     }
+
 }
 
 void

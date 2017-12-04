@@ -2,6 +2,7 @@
 #define LEVELSET_H
 
 #include <glm/glm.hpp>
+#include <glm/gtx/io.hpp>
 #include <vector>
 #include "grid.h"
 
@@ -34,7 +35,7 @@ struct LevelSet {
                 dist_grid(r, c) = -1.0f; // in liquid
             }
         }
-        dist_grid.debug_print();
+        // dist_grid.debug_print();
     }
 
     bool is_liquid(int row, int col) {
@@ -63,8 +64,8 @@ struct LevelSet {
             // First check if cell is in liquid 
             if (dist_grid(idx[i][0], idx[i][1]) < 0.0f) {
                 glm::vec2 new_vertex;
-                new_vertex[0] = idx[i][0] * cell_ratio;
-                new_vertex[1] = idx[i][1] * cell_ratio;
+                new_vertex[0] = (idx[i][0] * cell_ratio * 2) - 1.0f;
+                new_vertex[1] = (idx[i][1] * cell_ratio * 2) - 1.0f;
                 vertices.push_back(new_vertex);
                 ++vertex_cnt;
             }
@@ -90,6 +91,8 @@ struct LevelSet {
                 glm::vec2 new_vertex;
                 new_vertex[0] = (1 - p0_weight) * p0[0] + (p0_weight) * p1[0];
                 new_vertex[1] = (1 - p0_weight) * p0[1] + (p0_weight) * p1[1];
+                new_vertex[0] = (new_vertex[0] * 2) - 1.0f;
+                new_vertex[1] = (new_vertex[1] * 2) - 1.0f;
                 vertices.push_back(new_vertex);
                 ++vertex_cnt;
             }
