@@ -60,7 +60,7 @@ struct LevelSet {
      * For each signed distance cell, run my blazingly hyper speed marching
      * squares algorithm to determine the surface vertices
      */
-    void extract_surface(); 
+    void extract_surface(bool show_wireframe); 
 };
 
 #endif // LEVELSET_H

@@ -62,8 +62,9 @@ GLfloat red[] = {1.0f, 0.0f, 0.0f, 1.0f };
 GLfloat blue[] = {0.2f, 0.2f, 1.0f, 1.0f };
 GLfloat field[] = {0.6f, 0.2f, 1.0f, 1.0f };
 
-bool show_velocity = false;
-bool show_heat     = false;
+bool show_velocity  = false;
+bool show_heat      = false;
+bool show_wireframe = false;
 //
 std::vector<glm::vec2> generate_velocity_field()
 {
@@ -115,6 +116,8 @@ KeyCallback(GLFWwindow* window,
         glfwSetWindowShouldClose(window, GL_TRUE);
     else if (key == GLFW_KEY_S && mods == GLFW_MOD_CONTROL && action == GLFW_RELEASE) {
     } else if (key == GLFW_KEY_W && action != GLFW_RELEASE) {
+        std::cout << "Toggling Wireframe Liquid" << std::endl;
+        show_wireframe = !show_wireframe;
     } else if (key == GLFW_KEY_S && action != GLFW_RELEASE) {
     } else if (key == GLFW_KEY_A && action != GLFW_RELEASE) {
     } else if (key == GLFW_KEY_V && action != GLFW_RELEASE) {
@@ -417,7 +420,7 @@ int main(int argc, char* argv[])
                         (void*)0
             );
             glUniform4fv(liquid_color_id, 1, blue);
-            fluid_sim.level_set_.extract_surface();
+            fluid_sim.level_set_.extract_surface(show_wireframe);
         }
         
         // RENDER HEAT BOUNDARY //

@@ -16,27 +16,6 @@ void LevelSet::add_object(int width, int height) {
     // dist_grid.debug_print();
 }
 
-void LevelSet::extract_surface() 
-{
-    // Reset global volume
-    volume_ = 0.0f;
-
-    glm::vec2 vertices[8];
-    for (int r = 1; r <= N_; ++r) {
-        for (int c = 1; c <= N_; ++c) {
-            int vertex_cnt = marching_cubes(r, c, vertices); 
-            if (vertex_cnt) {
-                glBufferData(GL_ARRAY_BUFFER, vertex_cnt * sizeof(float) * 2,
-                    vertices, GL_STATIC_DRAW);
-                glDrawArrays(GL_LINES, 0, vertex_cnt);
-            // break;
-
-            }
-            // volume_ += calc_volume(vertices, start, end);
-            // std::cout << "vertices.size()" << start << " for (i,j) : " << r << ", " << c << std::endl;
-        }
-    }
-}
 
 int LevelSet::marching_cubes(int row, int col, glm::vec2 vertices[8]) 
 {
@@ -69,6 +48,8 @@ int LevelSet::marching_cubes(int row, int col, glm::vec2 vertices[8])
                 *  dist_grid(idx[(i+1)%4][0], idx[(i+1)%4][1]);
     
         if (sign < 0.0f) {
+            //std::cout << "idx[i][0] " << idx[i][0] << " [i][1] : " << idx[i][1] << std::endl;
+            //std::cout << "idx[i+1][0] " << idx[(i+1)%4][0] << " [i][1] : " << idx[(i+1)%4][1] << std::endl;
             float dist0 = dist_grid(idx[i][0], idx[i][1]);
             float dist1 = dist_grid(idx[(i+1)%4][0], idx[(i+1)%4][1]);
 
@@ -76,14 +57,18 @@ int LevelSet::marching_cubes(int row, int col, glm::vec2 vertices[8])
             float p0_weight = dist0 / (dist0 - dist1); 
 
             // Getting fractional points and interpolating using the weight
-            glm::vec2 p0(idx[i][0] * cell_ratio, idx[i][1] * cell_ratio);
+            glm::vec2 p0(idx[i][0]             * cell_ratio, idx[i][1] * cell_ratio);
             glm::vec2 p1(idx[(i+1)%4][0] * cell_ratio, idx[(i+1)%4][1] * cell_ratio);
+            //std::cout << "p0: " << p0 << std::endl;
+            //std::cout << "p1: " << p1 << std::endl;
 
             // Adding new vertex
             vertices[vertex_cnt][0] = (1.0f - p0_weight) * p0[0] + (p0_weight) * p1[0];
             vertices[vertex_cnt][1] = (1.0f - p0_weight) * p0[1] + (p0_weight) * p1[1];
             vertices[vertex_cnt][0] = (vertices[vertex_cnt][0] * 2.0f) - 1.0f;
             vertices[vertex_cnt][1] = (vertices[vertex_cnt][1] * 2.0f) - 1.0f;
+            //  std::cout << "vertex isec: x" << vertices[vertex_cnt][0] << std::endl;
+            //  std::cout << "vertex isec: y " << vertices[vertex_cnt][1] << std::endl;
             ++vertex_cnt;
         }
     }
@@ -97,4 +82,33 @@ int LevelSet::marching_cubes(int row, int col, glm::vec2 vertices[8])
      }
 
     return vertex_cnt;
+}
+
+void LevelSet::extract_surface(bool show_wireframe) 
+{
+    // Reset global volume
+    volume_ = 0.0f;
+
+    glm::vec2 vertices[8];
+    for (int r = 1; r <= N_; ++r) {
+        for (int c = 1; c <= N_; ++c) {
+            int vertex_cnt = marching_cubes(r, c, vertices); 
+            if (vertex_cnt) {
+                // So god damn hacky lol
+                for (int i = 0 ; i < vertex_cnt; ++i) {
+                    float tmp = vertices[i][0];
+                    vertices[i][0] = vertices[i][1];
+                    vertices[i][1] = tmp;
+                }
+                glBufferData(GL_ARRAY_BUFFER, vertex_cnt * sizeof(float) * 2,
+                    vertices, GL_STATIC_DRAW);
+                if (show_wireframe) {
+                    glDrawArrays(GL_LINE_LOOP, 0, vertex_cnt);
+                } else {
+                    glDrawArrays(GL_TRIANGLE_FAN, 0, vertex_cnt);
+                }
+            }
+            // volume_ += calc_volume(vertices, start, end);
+        }
+    }
 }
