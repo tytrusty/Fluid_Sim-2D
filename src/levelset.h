@@ -102,11 +102,11 @@ struct LevelSet {
         }
 
         if (vertex_cnt) {
-            std::cout << "considering cell: row: " << row << " col: " << col << std::endl; 
-            for (int i = 0; i < vertex_cnt; ++i ) {
-                std::cout << "v_" << i << " i: " << vertices[i][0] << std::endl;
-                std::cout << "v_" << i << " j: " << vertices[i][1] << std::endl;
-            }
+            // std::cout << "considering cell: row: " << row << " col: " << col << std::endl; 
+            // for (int i = 0; i < vertex_cnt; ++i ) {
+            //     std::cout << "v_" << i << " i: " << vertices[i][0] << std::endl;
+            //     std::cout << "v_" << i << " j: " << vertices[i][1] << std::endl;
+            // }
         }
 
         return vertex_cnt;
@@ -143,7 +143,7 @@ struct LevelSet {
                 if (vertex_cnt) {
                     glBufferData(GL_ARRAY_BUFFER, vertex_cnt * sizeof(float) * 2,
                         vertices, GL_STATIC_DRAW);
-                    glDrawArrays(GL_TRIANGLE_FAN, 0, vertex_cnt * sizeof(float) * 2);
+                    glDrawArrays(GL_LINES, 0, vertex_cnt * sizeof(float) * 2);
                 }
                 // volume_ += calc_volume(vertices, start, end);
                 // std::cout << "vertices.size()" << start << " for (i,j) : " << r << ", " << c << std::endl;

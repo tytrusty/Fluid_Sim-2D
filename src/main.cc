@@ -190,7 +190,7 @@ MousePosCallback(GLFWwindow* window, double mouse_x, double mouse_y)
         fluid_sim.y_old(i, j) = (current_x - prev_x) * 10.0f;
     } else if (add_density) {
         // fluid_sim.density_old(i, j) = 100.0f;
-        int radius = 1;
+        int radius = 4;
         for (int x = max(i - radius, 0); x < min(i + radius, config::N); ++x) {
             for (int y = max(j - radius, 0); y < min(j + radius, config::N); ++y) {
                 fluid_sim.density_old(x, y) = 250.0f;  
@@ -497,8 +497,8 @@ int main(int argc, char* argv[])
                 GL_UNSIGNED_BYTE, pixels);
         glBindTexture(GL_TEXTURE_2D, texture);
         glUniform1i(texture_id, 0);
- 
         glBindVertexArray(vao);       
+        ////
 
         // Passing in vertex values
         glEnableVertexAttribArray(0);

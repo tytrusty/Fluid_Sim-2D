@@ -25,7 +25,6 @@ void Fluid_Sim::simulation_step()
     if (enable_gravity_) {
         add_gravity(x);
     }
-
     swap(x, x_old); swap(y, y_old);
 
     // Viscous heat diffusion
