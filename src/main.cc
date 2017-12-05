@@ -36,7 +36,7 @@ const char* heat_fragment_shader =
 #include "shaders/heat.frag"
 ;
 
-int window_width = 800, window_height = 800;
+int window_width = 1000, window_height = 1000;
 
 
 Fluid_Sim fluid_sim(config::N, config::viscosity, config::diffusion, 
@@ -59,12 +59,13 @@ float tex_coords[] =
 };
 
 GLfloat red[] = {1.0f, 0.0f, 0.0f, 1.0f };
-GLfloat blue[] = {0.2f, 0.2f, 1.0f, 1.0f };
+GLfloat blue[] = {0.2f, 0.2f, 1.0f, 0.7f };
 GLfloat field[] = {0.6f, 0.2f, 1.0f, 1.0f };
 
 bool show_velocity  = false;
 bool show_heat      = false;
 bool show_wireframe = false;
+bool show_liquid    = true;
 //
 std::vector<glm::vec2> generate_velocity_field()
 {
@@ -133,6 +134,10 @@ KeyCallback(GLFWwindow* window,
         std::cout << "Toggling heat diffusion" << std::endl;
         fluid_sim.enable_heat_ = !fluid_sim.enable_heat_;
         show_heat = !show_heat;
+    } else if (key == GLFW_KEY_L && action != GLFW_RELEASE) {
+        // Toggle liquid rendering
+        std::cout << "Toggling liquid rendering" << std::endl;
+        show_liquid = !show_liquid;
     } else if (key == GLFW_KEY_J && action != GLFW_RELEASE) {
         // Decrease heat boundary expansion rate
         fluid_sim.heat_boundary_.decrease_rate();
@@ -411,7 +416,6 @@ int main(int argc, char* argv[])
         glLoadIdentity();
         clock_t beg = clock();
 
-        bool show_liquid = 1;
         // RENDER LIQUID //
         if (show_liquid) 
         {
@@ -496,11 +500,6 @@ int main(int argc, char* argv[])
                 sum += fluid_sim.x(i,j);
             }
         }
-        //std::cout << "density sum:  " << sum << std::endl;
-        // sum = 0.0f;
-        // for (int i = 0; i <= config::N+1; ++i) {
-        //     for (int j = 0; j <= config::N+1; ++j) {
-        //         sum += fluid_sim.density(i,j);
 
         glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, config::N, config::N, GL_RGBA,
                 GL_UNSIGNED_BYTE, pixels);

@@ -2,6 +2,7 @@
 #define HEAT_H
 
 #include <glm/glm.hpp>
+#include <iostream>
 #include <vector>
 #include "grid.h"
 #include "math.h"
@@ -19,9 +20,15 @@ private:
 
 public: 
     /** Half the boundary's expansion rate */
-    void decrease_rate() { expansion /= 2.0f; }
+    void decrease_rate() { 
+        expansion /= 2.0f; 
+        std::cout << "Decreased heat expansion rate: " << expansion << std::endl;
+    }
     /** Double the boundary's expansion rate */
-    void increase_rate() { expansion *= 2.0f; }
+    void increase_rate() { 
+        expansion *= 2.0f; 
+        std::cout << "Increased heat expansion rate: " << expansion << std::endl;
+    }
 
     /**
      * I'm not smart enough to do proper heat diffusion, so I just

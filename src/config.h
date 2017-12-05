@@ -5,7 +5,7 @@ namespace config
     static int N = 100;
     static float viscosity = /* 0.00001f; //*/ 100.0005f;  // kinematic viscosity
     static float diffusion = 0.0f; // 0.00001f; // density diffusion rate
-    static float time_step = 0.125f;
+    static float time_step = 0.03125; // 0.125f;
 
     static void increment_time_step() { time_step *= 2; }
     static void decrement_time_step() { time_step /= 2; }
