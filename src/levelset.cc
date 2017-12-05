@@ -2,7 +2,7 @@
 #include <iostream>
 
 void LevelSet::add_object(int width, int height) {
-    int r_begin = 1; //std::max((N_ - height) / 2, 1);
+    int r_begin = 0; //std::max((N_ - height) / 2, 1);
     int r_end   = std::min(r_begin + height, N_);
     int c_begin = std::max((N_ - width) / 2, 1);
     int c_end   = std::min(c_begin + width, N_);
@@ -87,6 +87,7 @@ int LevelSet::marching_cubes(int row, int col, glm::vec2 vertices[8])
 void LevelSet::extract_surface(bool show_wireframe) 
 {
     // Reset global volume
+    volume_prev_ = volume_;
     volume_ = 0.0f;
 
     glm::vec2 vertices[8];
@@ -108,7 +109,7 @@ void LevelSet::extract_surface(bool show_wireframe)
                     glDrawArrays(GL_TRIANGLE_FAN, 0, vertex_cnt);
                 }
             }
-            // volume_ += calc_volume(vertices, start, end);
+            volume_ += calc_volume(vertices, vertex_cnt);
         }
     }
 }

@@ -10,23 +10,19 @@
 #include <debuggl.h>
 
 /** Basic area of a polygon computation */
-inline float calc_volume(std::vector<glm::vec2> vertices, int start, int end) {
+inline float calc_volume(glm::vec2 vertices[8], int vertex_cnt) {
     float volume = 0.0f;
-    int i_next;
-    for (int i = start; i < end; ++i) {
+    for (int i = 0; i < vertex_cnt; ++i) {
         // x1*y2 - x2*y1 + ...
-        i_next = i+1; 
-        if (i_next == end) i_next = start; 
-
-        volume += (vertices[i][1] * vertices[i_next][0])
-                - (vertices[i][0] * vertices[i_next][1]); 
+        volume += (vertices[i][1] * vertices[(i+1)%vertex_cnt][0])
+                - (vertices[i][0] * vertices[(i+1)%vertex_cnt][1]); 
     }
     return volume / 2.0f;
 }
 
 struct LevelSet {
     int N_;
-    float volume_;
+    float volume_, volume_prev_;
 
     /**
      * Signed distance grid.

@@ -174,27 +174,34 @@ void Fluid_Sim::diffuse(Fluid_Grid<float>& grid, Fluid_Grid<float>& grid_prev,
     float c = 1 + 4*a;
     gauss_seidel (grid, grid_prev, a, c);
 }
- 
+
+static float vdiv = 0.0f;
+static float y_volume = 0.0f;
+static float volume_error = 0.0f;
+
 void Fluid_Sim::compute_volume_error() {
-	// float curVolume = levelset2D::getVolume();
-	// if( ! volume0 || ! do_volumeCorrection || ! curVolume ) {
-	// 	vdiv = 0.0;
-	// 	return;
-	// }
-	// volume_error = volume0-curVolume;
-	// 
-	// FLOAT x = (curVolume - volume0)/volume0;
-	// y_volume0 += x*DT;
-	// 
-	// FLOAT kp = 2.3 / (25.0 * DT);
-	// FLOAT ki = kp*kp/16.0;
-	// vdiv = -(kp * x + ki * y_volume0) / (x + 1.0);
+	float curr_volume = level_set_.volume_;
+    float prev_volume = level_set_.volume_prev_;
+	if( ! prev_volume || ! curr_volume ) {
+		vdiv = 0.0;
+		return;
+	}
+	volume_error = prev_volume-curr_volume;
+	
+	float x = (curr_volume - prev_volume)/prev_volume;
+	y_volume += time_step_*x;
+	
+	float kp = 2.3 / (25.0 * time_step_);
+	float ki = kp*kp/16.0;
+	vdiv = -(kp * x + ki * y_volume) / (x + 1.0);
+    std::cout << "vol error " << volume_error << std::endl;
 }
 
 void Fluid_Sim::project(Fluid_Grid<float>& x, Fluid_Grid<float>& y, 
         Fluid_Grid<float>& p, Fluid_Grid<float>& div)
 {
     // _Pragma("omp parallel for")
+    // Get divergence of velocity field
     for (int i = 1; i <= N_; ++i) {
         for (int j = 1; j <= N_; ++j) {
             div(i,j) = (x(i+1,j) - x(i-1,j) + y(i, j+1) - y(i, j -1)) * -0.5f / N_;
@@ -203,9 +210,15 @@ void Fluid_Sim::project(Fluid_Grid<float>& x, Fluid_Grid<float>& y,
     }
     adjust_bounds(div);
     adjust_bounds(p);
+    // Solving poisson equation of the form
+    // Laplacian(pressure) = divergence of velocity field
+    // This is equivalent to a linear system of the form Ax = b where
+    // x is the pressure. Gauss seidel numerical solver will be used
+    // to solve for pressure. 
     gauss_seidel (p, div, 1, 4);
     
     // _Pragma("omp parallel for")
+    // Subtract pressure to get divergent free velocity field
     for (int i = 1; i <= N_; ++i) {
         for (int j = 1; j <= N_; ++j) {
             x(i,j) -=  0.5f * N_ * (p(i+1,j) - p(i-1,j));
