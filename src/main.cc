@@ -59,7 +59,9 @@ float tex_coords[] =
 };
 
 GLfloat red[] = {1.0f, 0.0f, 0.0f, 1.0f };
-GLfloat blue[] = {0.2f, 0.2f, 1.0f, 0.7f };
+
+//GLfloat blue[] = {0.2f, 0.2f, 1.0f, 0.7f };
+GLfloat blue[] = {0.94f, 0.9f, 0.75f, 1.0f };
 GLfloat field[] = {0.6f, 0.2f, 1.0f, 1.0f };
 
 bool show_velocity  = false;
