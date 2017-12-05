@@ -66,6 +66,12 @@ struct Fluid_Sim {
 
     void diffuse_viscosity(Fluid_Grid<float>& grid, Fluid_Grid<float>& grid_prev, 
             Fluid_Grid<float>& viscosity);
+    
+    /**
+     * NOTE: Not my code. I have no clue how this works.
+     * Credit to: https://code.google.com/archive/p/levelset2d/
+     */
+    void compute_volume_error();
 
     void project(Fluid_Grid<float>& x, Fluid_Grid<float>& y, Fluid_Grid<float>& p,
             Fluid_Grid<float>& div);

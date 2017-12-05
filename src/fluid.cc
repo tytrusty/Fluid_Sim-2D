@@ -175,6 +175,22 @@ void Fluid_Sim::diffuse(Fluid_Grid<float>& grid, Fluid_Grid<float>& grid_prev,
     gauss_seidel (grid, grid_prev, a, c);
 }
  
+void Fluid_Sim::compute_volume_error() {
+	// float curVolume = levelset2D::getVolume();
+	// if( ! volume0 || ! do_volumeCorrection || ! curVolume ) {
+	// 	vdiv = 0.0;
+	// 	return;
+	// }
+	// volume_error = volume0-curVolume;
+	// 
+	// FLOAT x = (curVolume - volume0)/volume0;
+	// y_volume0 += x*DT;
+	// 
+	// FLOAT kp = 2.3 / (25.0 * DT);
+	// FLOAT ki = kp*kp/16.0;
+	// vdiv = -(kp * x + ki * y_volume0) / (x + 1.0);
+}
+
 void Fluid_Sim::project(Fluid_Grid<float>& x, Fluid_Grid<float>& y, 
         Fluid_Grid<float>& p, Fluid_Grid<float>& div)
 {
