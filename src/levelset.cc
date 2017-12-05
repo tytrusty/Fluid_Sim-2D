@@ -26,12 +26,10 @@ void LevelSet::extract_surface()
         for (int c = 1; c <= N_; ++c) {
             int vertex_cnt = marching_cubes(r, c, vertices); 
             if (vertex_cnt) {
-                std::cout << "buf size: " << vertex_cnt * sizeof(float) * 2 << std::endl;
-                std::cout << "vertex_cnt: " << vertex_cnt << std::endl;
-                glBufferData(GL_ARRAY_BUFFER, vertex_cnt * sizeof(float) *2,
+                glBufferData(GL_ARRAY_BUFFER, vertex_cnt * sizeof(float) * 2,
                     vertices, GL_STATIC_DRAW);
                 glDrawArrays(GL_LINES, 0, vertex_cnt);
-            break;
+            // break;
 
             }
             // volume_ += calc_volume(vertices, start, end);
@@ -59,8 +57,8 @@ int LevelSet::marching_cubes(int row, int col, glm::vec2 vertices[8])
 
         if (dist_grid(idx[i][0], idx[i][1]) < 0.0f) {
             glm::vec2 new_vertex;
-            vertices[vertex_cnt][1] = (idx[i][0] * cell_ratio * 2) - 1.0f;
-            vertices[vertex_cnt][0] = (idx[i][1] * cell_ratio * 2) - 1.0f;
+            vertices[vertex_cnt][0] = (idx[i][0] * cell_ratio * 2) - 1.0f;
+            vertices[vertex_cnt][1] = (idx[i][1] * cell_ratio * 2) - 1.0f;
             ++vertex_cnt;
         }
         
@@ -82,22 +80,21 @@ int LevelSet::marching_cubes(int row, int col, glm::vec2 vertices[8])
             glm::vec2 p1(idx[(i+1)%4][0] * cell_ratio, idx[(i+1)%4][1] * cell_ratio);
 
             // Adding new vertex
-            glm::vec2 vertices[vertex_cnt];
             vertices[vertex_cnt][0] = (1.0f - p0_weight) * p0[0] + (p0_weight) * p1[0];
             vertices[vertex_cnt][1] = (1.0f - p0_weight) * p0[1] + (p0_weight) * p1[1];
-            vertices[vertex_cnt][1] = (vertices[vertex_cnt][0] * 2.0f) - 1.0f;
-            vertices[vertex_cnt][0] = (vertices[vertex_cnt][1] * 2.0f) - 1.0f;
+            vertices[vertex_cnt][0] = (vertices[vertex_cnt][0] * 2.0f) - 1.0f;
+            vertices[vertex_cnt][1] = (vertices[vertex_cnt][1] * 2.0f) - 1.0f;
             ++vertex_cnt;
         }
     }
 
-    if (vertex_cnt) {
-        std::cout << "considering cell: row: " << row << " col: " << col << std::endl; 
-         for (int i = 0; i < vertex_cnt; ++i ) {
-             std::cout << "vertex: " << i << " i: " << vertices[i][0] << std::endl;
-             std::cout << "vertex: " << i << " j: " << vertices[i][1] << std::endl;
-         }
-    }
+     if (0 && vertex_cnt) {
+         std::cout << "considering cell: row: " << row << " col: " << col << std::endl; 
+          for (int i = 0; i < vertex_cnt; ++i ) {
+              std::cout << "vertex: " << i << " i: " << vertices[i][0] << std::endl;
+              std::cout << "vertex: " << i << " j: " << vertices[i][1] << std::endl;
+          }
+     }
 
     return vertex_cnt;
 }

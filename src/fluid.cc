@@ -11,7 +11,7 @@ Fluid_Sim::Fluid_Sim (int N, float viscosity, float diffusion, float time_step)
      viscosity_grid(N), level_set_(N) 
 {
     viscosity_grid.set_all(viscosity);
-    level_set_.add_object(N/2, N/2);
+    level_set_.add_object(N, N/2);
 }
 
 void Fluid_Sim::simulation_step()

@@ -59,6 +59,7 @@ struct Fluid_Grid {
     void debug_print () {
         printf("----- DEBUG PRINT -----\n");
         for (int i = 1; i <= N_; ++i) {
+            printf("%d: ", i);
             for (int j = 1; j <= N_; ++j) {
                 printf("%.3f ", (*this)(i,j));
             }
