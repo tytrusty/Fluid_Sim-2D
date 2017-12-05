@@ -64,11 +64,11 @@ GLfloat field[] = {0.6f, 0.2f, 1.0f, 1.0f };
 
 bool show_velocity = false;
 bool show_heat     = false;
-
+//
 std::vector<glm::vec2> generate_velocity_field()
 {
     std::vector<glm::vec2> vector_field;
-    int length = 3; // line length
+    int length = 5; // line length
 
     for (int row = 0; row < window_height; row += 5) {
         for (int col = 0; col < window_width; col += 5) {
@@ -280,7 +280,7 @@ int main(int argc, char* argv[])
     GLuint liquid_vbo;
     glGenBuffers(1, &liquid_vbo);  // generate buffer (for liquid);
     glBindBuffer(GL_ARRAY_BUFFER, liquid_vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float),
+    glBufferData(GL_ARRAY_BUFFER, 0,
             NULL, GL_STATIC_DRAW);
     
     // Setup vertex shader
@@ -406,7 +406,6 @@ int main(int argc, char* argv[])
         {
             glUseProgram(liquid_program_id);
             glBindVertexArray(liquid_vao);
-            //liquid.clear();
             glEnableVertexAttribArray(0);
             glBindBuffer(GL_ARRAY_BUFFER, liquid_vbo);
             glVertexAttribPointer(
@@ -419,9 +418,8 @@ int main(int argc, char* argv[])
             );
             glUniform4fv(liquid_color_id, 1, blue);
             fluid_sim.level_set_.extract_surface();
-//            glDrawArrays(GL_TRIANGLE_FAN, 0, liquid.size());
         }
-
+        
         // RENDER HEAT BOUNDARY //
         if (show_heat) 
         {
@@ -498,7 +496,6 @@ int main(int argc, char* argv[])
         glBindTexture(GL_TEXTURE_2D, texture);
         glUniform1i(texture_id, 0);
         glBindVertexArray(vao);       
-        ////
 
         // Passing in vertex values
         glEnableVertexAttribArray(0);
