@@ -41,7 +41,10 @@ struct LevelSet {
         return dist_grid(row, col) < 0.0f;
     }
 
-
+    void reset() {
+        dist_grid.set_all(1.0f);
+        add_object(N_/2, N_/2);
+    }
 
     /** Add an object to levelset */
     void add_object(int width, int height);

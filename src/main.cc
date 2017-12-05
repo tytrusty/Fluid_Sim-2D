@@ -124,14 +124,22 @@ KeyCallback(GLFWwindow* window,
         std::cout << "Toggling Velocity Field" << std::endl;
         show_velocity = !show_velocity;
     } else if (key == GLFW_KEY_G && action != GLFW_RELEASE) {
+        // Applies gravitational forces to cells in liquid
         std::cout << "Toggling gravity" << std::endl;
         fluid_sim.enable_gravity_ = !fluid_sim.enable_gravity_;
     } else if (key == GLFW_KEY_H && action != GLFW_RELEASE) {
+        // Toggle the heat boundary. Renders it and enables
+        // viscosity reduction of cells.
         std::cout << "Toggling heat diffusion" << std::endl;
         fluid_sim.enable_heat_ = !fluid_sim.enable_heat_;
         show_heat = !show_heat;
+    } else if (key == GLFW_KEY_J && action != GLFW_RELEASE) {
+        // Decrease heat boundary expansion rate
+        fluid_sim.heat_boundary_.decrease_rate();
+    } else if (key == GLFW_KEY_K && action != GLFW_RELEASE) {
+        // Increase heat boundary expansion rate
+        fluid_sim.heat_boundary_.increase_rate();
     } else if (key == GLFW_KEY_R && action != GLFW_RELEASE) {
-        std::cout << "Resetting Simulation!" << std::endl;
         fluid_sim.reset();
     } else if (key == GLFW_KEY_LEFT && action != GLFW_RELEASE) {
         config::decrement_time_step();

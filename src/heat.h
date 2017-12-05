@@ -14,10 +14,15 @@ private:
     float radius_ = 0.01f;
     const float x = 0.8;
     const float y = 0.8;
-    const float expansion = 0.0005f;
+    float expansion = 0.0005f;
     const float visc_rate = 0.25f;
 
 public: 
+    /** Half the boundary's expansion rate */
+    void decrease_rate() { expansion /= 2.0f; }
+    /** Double the boundary's expansion rate */
+    void increase_rate() { expansion *= 2.0f; }
+
     /**
      * I'm not smart enough to do proper heat diffusion, so I just
      * made a circle expand over time ... 

@@ -11,7 +11,7 @@ Fluid_Sim::Fluid_Sim (int N, float viscosity, float diffusion, float time_step)
      viscosity_grid(N), level_set_(N) 
 {
     viscosity_grid.set_all(viscosity);
-    level_set_.add_object(N, N/2);
+    level_set_.add_object(N/2, N/2);
 }
 
 void Fluid_Sim::simulation_step()
@@ -74,6 +74,7 @@ void Fluid_Sim::reset()
     y_old.reset();
     density.reset();
     density_old.reset();
+    level_set_.reset();
 }
 
 void Fluid_Sim::resize(int N) 
@@ -102,7 +103,7 @@ void Fluid_Sim::add_gravity(Fluid_Grid<float>& y) {
     // AKA IF CELL HAS A DUDE BELOW IT THAT IS IN LIQUID, THEN LET GRAVITY DO SHIT
     for (int i = 1; i <= N_; ++i) {
         for (int j = 1; j <= N_; ++j) {
-            if (level_set_.is_liquid(i, j)) {
+            if (level_set_.is_liquid(i, j) || level_set_.is_liquid(i-1,j)) {
                 y(i, j) += amount;
             }
         }
