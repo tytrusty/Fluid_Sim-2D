@@ -1,8 +1,8 @@
-Ty Trusty
+### Ty Trusty
 
 Current implementation includes basic fluid simulation based off of Stam's original model for fluid flow. I am currently extending this model to support liquid simulation. I am doing this with a level set method that keeps track of the fluid's surface and then I advect this signed distance along the velocity field. Currently there are issues with rendering the fluid and preserving the volume of the liquid. 
 
-My next steps are to fix the immediate issues with the rendering and volume and then 
+My next steps are to fix the immediate issues with the rendering and volume and then once this is done I can finally make the fluid appear as if it is melting solid. Assuming the previous steps are correct, all I will have to do is increase the liquid's viscosity, apply gravity, and then let the heat boundary decrease the viscosity. This will create the melting effect.
 
 ## Build and Run
 In the main directory:
