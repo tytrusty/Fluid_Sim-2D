@@ -114,12 +114,18 @@ void Fluid_Sim::add_gravity(Fluid_Grid<float>& y) {
 void Fluid_Sim::adjust_bounds(Fluid_Grid<float>& grid)
 {
     // Handling edges
-    for (int i = 1; i <= N_; ++i) {
+    for (int i = 0; i <= N_ + 1; ++i) {
+        // For every column in the simulation, the flow to the top and bottom
+        // rows should be 0 for the vertical velocity
         grid(0,    i) = (grid.type_ == X_Velocity) ? 0 /* -grid(1, i) */ : grid(1,  i); 
         grid(N_+1, i) = (grid.type_ == X_Velocity) ? 0 /* -grid(N_, i)*/ : grid(N_, i); 
+
+        // For every row in the simulation, the flow to the left and right edges
+        // should have a 0 X flow
         grid(i,    0) = (grid.type_ == Y_Velocity) ? 0 /* -grid(i, 1) */ : grid(i,  1); 
         grid(i, N_+1) = (grid.type_ == Y_Velocity) ? 0 /* -grid(i, N_)*/ : grid(i, N_); 
     }
+
 
     // Handling corners -- average out the two nearest
     grid(0,       0) = 0.5 * (grid(1,     0) + grid(0,     1));
